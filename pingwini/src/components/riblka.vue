@@ -1,12 +1,18 @@
 <script setup>
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
+
+const goBack = () => {
+  router.push('/')
+}
 </script>
 
 <template>
   <div class="fishing-page">
     <!-- шапка -->
     <div class="header">
-      <button class="back-btn">←</button>
+      <button class="back-btn" @click="goBack">←</button>
       <span class="page-title">Рыбалка</span>
       <div class="fish-counter">🐟 15</div>
     </div>
@@ -41,10 +47,7 @@
 
         
       </div>
-<!-- 
-      <div class="last-catch">
-        последний улов: —
-      </div> -->
+
     </div>
   </div>
 </template>
