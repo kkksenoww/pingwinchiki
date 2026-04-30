@@ -81,7 +81,7 @@ const heal = () => {
             </div>
             <div class="stat-card level-badge-mini">
                 <img src="../assets/kubok.png" alt=""> {{ level }} | <img src="../assets/star.png" alt=""> {{ xp }}/{{
-                xpToNext }}
+                    xpToNext }}
             </div>
         </div>
 
@@ -99,20 +99,26 @@ const heal = () => {
 
         <!-- Нижняя навигация -->
         <div class="bottom-nav-mini">
-            <div class="nav-item" @click="navigateTo('fishing')">
-                <img src="../assets/fishing.png" class="nav-icon" alt="">
+            <router-link to="/ribalka" class="nav-item">
+                <img src="../assets/fishing.png" class="nav-icon" alt="" />
                 <span>Рыбалка</span>
-            </div>
-            <div class="nav-item" @click="navigateTo('fridge')">
-                <img src="../assets/holodil.png" class="nav-icon" alt="">
-                <span>Холодильник</span>
-            </div>
-            <div class="nav-item" @click="navigateTo('flock')">
-                <img src="../assets/staya.png" class="nav-icon" alt="">
-                <span>Стая</span>
-            </div>
-        </div>
+            </router-link>
 
+            <router-link to="/fridge" class="nav-item">
+                <img src="../assets/holodil.png" class="nav-icon" alt="" />
+                <span>Холодильник</span>
+            </router-link>
+
+            <router-link to="/gacha" class="nav-item">
+                <img src="../assets/holodil.png" class="nav-icon" alt="" /> 
+                <span>Гача</span>
+            </router-link>
+
+            <router-link to="/collection" class="nav-item">
+                <img src="../assets/staya.png" class="nav-icon" alt="" />
+                <span>Стая</span>
+            </router-link>
+        </div>
         <div v-if="message" class="message-toast">{{ message }}</div>
     </div>
 </template>
@@ -129,10 +135,10 @@ const heal = () => {
     justify-content: space-between;
     min-height: 85vh;
     background: radial-gradient(circle at 70% 20%, #3bc1ff, #004f72);
-    border-radius: 64px;
     padding: 20px;
     overflow: hidden;
     box-shadow: 0 20px 30px rgba(0, 0, 0, 0.3);
+    font-family: system-ui, 'Segoe UI', 'Helvetica', sans-serif;
 }
 
 
@@ -273,7 +279,6 @@ const heal = () => {
     justify-content: space-around;
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(8px);
-    border-radius: 60px;
     padding: 8px;
     margin-top: 10px;
     width: 100%;
@@ -286,6 +291,16 @@ const heal = () => {
     align-items: center;
     cursor: pointer;
     transition: 0.05s;
+}
+
+.nav-item,
+.router-link-active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    text-decoration: none;
+    color: white;
 }
 
 .nav-item:active {
