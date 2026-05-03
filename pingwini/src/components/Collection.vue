@@ -4,15 +4,90 @@ import { useRouter } from 'vue-router'
 import useGacha from '../composables/useGacha'
 
 const router = useRouter()
-const { inventory, getPenguinById } = useGacha()
+const { inventory, getPenguinById, penguinBase } = useGacha()
 
 // Преобразуем id вхождения в объекты пингвинов
-const ownedPenguins = computed(() =>
-  inventory.value.map((id) => getPenguinById(id)).filter((p) => p !== null)
-)
+const ownedPenguins = computed(() => {
+  const result = []
+  for (let i = 0; i < inventory.value.length; i++) {
+    const penguin = getPenguinById(inventory.value[i])
+    if (penguin) {
+      result.push(penguin)
+    }
+  }
+  return result
+})
+
+// Все пингвины с пометкой, есть ли они у игрока
+const allPenguins = computed(() => {
+  const result = []
+  for (let i = 0; i < penguinBase.length; i++) {
+    const penguin = penguinBase[i]
+    let owned = false
+    for (let j = 0; j < inventory.value.length; j++) {
+      if (inventory.value[j] === penguin.id) {
+        owned = true
+        break
+      }
+    }
+    result.push({
+      id: penguin.id,
+      name: penguin.name,
+      rarity: penguin.rarity,
+      image: penguin.image,
+      owned: owned
+    })
+  }
+  
+  // Сортировка
+  const sorted = []
+  const order = ['legendary', 'epic', 'rare', 'common']
+
+  // Сначала полученные по редкости
+  for (let r = 0; r < order.length; r++) {
+    for (let i = 0; i < result.length; i++) {
+      if (result[i].rarity === order[r] && result[i].owned) {
+        sorted.push(result[i])
+      }
+    }
+  }
+  
+  // Потом неполученные по редкости
+  for (let r = 0; r < order.length; r++) {
+    for (let i = 0; i < result.length; i++) {
+      if (result[i].rarity === order[r] && !result[i].owned) {
+        sorted.push(result[i])
+      }
+    }
+  }
+  
+  return sorted
+})
+
+// Считаем только уникальных пингвинов
+const ownedCount = computed(() => {
+  const unique = []
+  for (let i = 0; i < inventory.value.length; i++) {
+    let found = false
+    for (let j = 0; j < unique.length; j++) {
+      if (unique[j] === inventory.value[i]) {
+        found = true
+        break
+      }
+    }
+    if (!found) {
+      unique.push(inventory.value[i])
+    }
+  }
+  return unique.length
+})
+
+const totalCount = computed(() => {
+  return penguinBase.length
+})
 
 function goBack() {
-  router.push('/')
+  router.push({ name: 'home' })
 }
 </script>
 
@@ -21,24 +96,28 @@ function goBack() {
     <div class="header">
       <button class="back-btn" @click="goBack">←</button>
       <span class="title">Стая</span>
-      <div class="count">{{ ownedPenguins.length }} пингвинов</div>
+      <div class="count">{{ ownedCount }} / {{ totalCount }}</div>
     </div>
 
-    <div v-if="ownedPenguins.length === 0" class="empty">
+    <div v-if="ownedCount === 0" class="empty">
       <p>У вас пока нет пингвинов.</p>
       <p>Ловите рыбу и получайте карточки для Гачи!</p>
     </div>
 
     <div class="grid" v-else>
       <div
-        v-for="penguin in ownedPenguins"
+        v-for="penguin in allPenguins"
         :key="penguin.id"
         class="penguin-card"
+        :class="{ locked: !penguin.owned }"
       >
         <img :src="penguin.image" :alt="penguin.name" />
         <div class="name">{{ penguin.name }}</div>
         <div class="rarity" :class="penguin.rarity">
           {{ penguin.rarity }}
+        </div>
+        <div v-if="!penguin.owned" class="locked-overlay">
+          🔒
         </div>
       </div>
     </div>
@@ -114,6 +193,11 @@ function goBack() {
   border-radius: 50%;
   padding: 5px;
   margin-bottom: 8px;
+}
+
+.penguin-card.locked {
+  opacity: 0.4;
+  filter: grayscale(80%);
 }
 
 .name {

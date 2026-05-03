@@ -7,19 +7,21 @@ const router = useRouter()
 const { tickets, pullGacha } = useGacha()
 
 const pulledPenguin = ref(null)
+const showError = ref(false)
 
 function doPull() {
+  showError.value = false
   const result = pullGacha()
   if (result) {
     pulledPenguin.value = result
   } else {
     pulledPenguin.value = null
-    alert('Недостаточно карточек!')
+    showError.value = true
   }
 }
 
 function goBack() {
-  router.push('/')
+  router.push({ name: 'home' })
 }
 </script>
 
@@ -38,7 +40,7 @@ function goBack() {
         </div>
         <div class="penguin-name">{{ pulledPenguin.name }}</div>
         <div class="penguin-rarity" :class="pulledPenguin.rarity">
-          {{ pulledPenguin.rarity.toUpperCase() }}
+          {{ pulledPenguin.rarity }}
         </div>
       </div>
 
