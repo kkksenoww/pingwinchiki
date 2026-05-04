@@ -1,25 +1,57 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import useGacha from '../composables/useGacha'
 
 const router = useRouter()
-const { fishCount, addFish, addTicket } = useGacha()
+const { fishCount, addFish, addTicket, getPenguinLevel } = useGacha()
 
 const isFishing = ref(false)
 const progress = ref(0)
 const resultMessage = ref('')
 let fishingInterval = null
+let messageTimeout = null
 
-function goBack() {
-  router.push('/')
+const currentLevel = computed(() => getPenguinLevel())
+
+const getFishByLevel = () => {
+  const level = currentLevel.value
+
+  const fishPool = [
+    { name: 'Мелкая рыбка', value: 1, type: 'small', minLevel: 1, chance: 35 },
+    { name: 'Пескарь', value: 2, type: 'small', minLevel: 1, chance: 30 },
+    { name: 'Окунь', value: 3, type: 'river', minLevel: 2, chance: 15 },
+    { name: 'Карп', value: 4, type: 'river', minLevel: 3, chance: 10 },
+    { name: 'Лосось', value: 5, type: 'river', minLevel: 4, chance: 5 },
+    { name: 'Щука', value: 7, type: 'sea', minLevel: 5, chance: 3 },
+    { name: 'Сом', value: 10, type: 'sea', minLevel: 6, chance: 1.5 },
+    { name: 'Кальмар', value: 12, type: 'squid', minLevel: 7, chance: 0.3 },
+    { name: 'Осьминог', value: 15, type: 'squid', minLevel: 8, chance: 0.15 },
+    { name: 'Осётр', value: 20, type: 'royal', minLevel: 9, chance: 0.04 },
+    { name: 'Королевская рыба', value: 30, type: 'royal', minLevel: 10, chance: 0.01 }
+  ]
+
+  const available = fishPool.filter(f => level >= f.minLevel)
+  const totalChance = available.reduce((sum, f) => sum + f.chance, 0)
+  let random = Math.random() * totalChance
+
+  for (const fish of available) {
+    if (random < fish.chance) {
+      return { name: fish.name, value: fish.value, type: fish.type }
+    }
+    random -= fish.chance
+  }
+
+  return { name: 'Мелкая рыбка', value: 1, type: 'small' }
 }
 
 function startFishing() {
   if (isFishing.value) return
+
   isFishing.value = true
   progress.value = 0
-  resultMessage.value = ''
+
+  if (messageTimeout) clearTimeout(messageTimeout)
 
   fishingInterval = setInterval(() => {
     progress.value += 2
@@ -27,66 +59,73 @@ function startFishing() {
       clearInterval(fishingInterval)
       progress.value = 100
 
-      // Результат ловли
-      addFish(1)
-      const gotTicket = Math.random() < 0.25 // 25% шанс на карточку
+      const caught = getFishByLevel()
+      addFish(caught.value, caught.type)
+
+      const ticketChance = 0.2 + (currentLevel.value * 0.02)
+      const gotTicket = Math.random() < ticketChance
+
       if (gotTicket) {
         addTicket(1)
-        resultMessage.value = '🐟 Рыба поймана! +1 карточка'
+        resultMessage.value = `${caught.name} +${caught.value} рыбы! +1 карточка`
       } else {
-        resultMessage.value = '🐟 Рыба поймана!'
+        resultMessage.value = `${caught.name} +${caught.value} рыбы!`
       }
 
       isFishing.value = false
+
+      if (messageTimeout) clearTimeout(messageTimeout)
+      messageTimeout = setTimeout(() => {
+        if (resultMessage.value) resultMessage.value = ''
+      }, 2500)
     }
-  }, 30) // 30ms * 50 шагов = 1500ms (1.5 секунды)
+  }, 30)
 }
+
+function goBack() {
+  router.push('/')
+}
+
+onUnmounted(() => {
+  if (fishingInterval) clearInterval(fishingInterval)
+  if (messageTimeout) clearTimeout(messageTimeout)
+})
 </script>
 
 <template>
   <div class="fishing-page">
-    <!-- шапка -->
     <div class="header">
       <button class="back-btn" @click="goBack">←</button>
       <span class="page-title">Рыбалка</span>
       <div class="fish-counter">🐟 {{ fishCount }}</div>
     </div>
 
-    <!-- игровая зона -->
     <div class="game-zone">
       <div class="ice-lunka">
         <div class="voda"></div>
         <div class="udochka-icon">🎣</div>
       </div>
-
       <div class="pingvinchik">
         <span class="pingva">🐧</span>
         <span class="palochka">🎣</span>
       </div>
     </div>
 
-    <!-- нижняя панель -->
     <div class="panel">
-      <button class="catch-button" :class="{ disabled: isFishing }" @click="startFishing" :disabled="isFishing">
-        {{ isFishing ? 'Ловим...' : '🎣 Ловить' }}
+      <button class="catch-button" :disabled="isFishing" @click="startFishing">
+        {{ isFishing ? 'Ловим...' : 'Ловить' }}
       </button>
 
       <div class="progress">
-        <div
-          class="progress-line"
-          :style="{ width: progress + '%' }"
-        ></div>
+        <div class="progress-line" :style="{ width: progress + '%' }"></div>
       </div>
 
-      <div v-if="resultMessage" class="result-message">
-        {{ resultMessage }}
-      </div>
+      <div v-if="resultMessage" class="result-message">{{ resultMessage }}</div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* ======= ПЕРЕМЕННЫЕ ======= */
 .fishing-page {
   --bg-top: #0f405c;
   --bg-bottom: #1b6d8a;
@@ -105,7 +144,6 @@ function startFishing() {
   font-family: system-ui, 'Segoe UI', 'Helvetica', sans-serif;
 }
 
-/* ======= ШАПКА ======= */
 .header {
   display: flex;
   justify-content: space-between;
@@ -136,7 +174,6 @@ function startFishing() {
   font-size: 16px;
 }
 
-/* ======= ИГРОВАЯ ЗОНА ======= */
 .game-zone {
   flex: 1;
   display: flex;
@@ -197,7 +234,6 @@ function startFishing() {
   transform: rotate(-20deg);
 }
 
-/* ======= НИЖНЯЯ ПАНЕЛЬ ======= */
 .panel {
   background: var(--gray-bg);
   padding: 20px 20px 30px;

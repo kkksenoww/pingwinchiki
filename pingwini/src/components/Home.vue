@@ -1,27 +1,51 @@
 <script setup>
 import { ref, computed } from 'vue'
-// import { useRouter } from 'vue-router'
+import useGacha from '../composables/useGacha'
 
-// const router = useRouter()
+const { 
+  addXp, 
+  getPenguinLevel, 
+  penguinXp, 
+  penguinLevel,
+  removeFishByType,
+  getTotalFish,
+  getFishByType
+} = useGacha()
 
-// Состояние пингвина
 const satiety = ref(70)
 const health = ref(100)
-const xp = ref(0)
-const level = ref(1)
 
 const message = ref('')
 let msgTimeout = null
 const showBubble = ref(false)
 const bubbleText = ref('')
 
-// стили
-const statCss = ref(satiety + '%')
-const healthCss = ref(health + '%')
+const statCss = ref(satiety.value + '%')
+const healthCss = ref(health.value + '%')
 
-const xpToNext = computed(() => level.value * 100)
+const xpToNext = computed(() => getPenguinLevel() * 100)
 
-// временное сообщение
+const hasFish = computed(() => getTotalFish() > 0)
+
+const fishStats = {
+  small: { xp: 5, satiety: 25, name: 'Мелкая рыба' },
+  river: { xp: 12, satiety: 35, name: 'Речная рыба' },
+  sea: { xp: 20, satiety: 45, name: 'Морская рыба' },
+  squid: { xp: 30, satiety: 55, name: 'Кальмар' },
+  royal: { xp: 50, satiety: 75, name: 'Королевская рыба' }
+}
+
+const getBestAvailableFish = () => {
+  const types = ['royal', 'squid', 'sea', 'river', 'small']
+  for (const type of types) {
+    const amount = getFishByType(type)
+    if (amount > 0) {
+      return { type, ...fishStats[type] }
+    }
+  }
+  return null
+}
+
 const showText = (text, duration = 2000) => {
     if (msgTimeout) clearTimeout(msgTimeout)
     message.value = text
@@ -30,7 +54,6 @@ const showText = (text, duration = 2000) => {
     }, duration)
 }
 
-// Клик по пингвину
 const tapPico = () => {
     bubbleText.value = 'Пиу!'
     showBubble.value = true
@@ -39,25 +62,37 @@ const tapPico = () => {
     }, 1200)
 }
 
-// Кормление
 const feed = () => {
-    satiety.value = Math.min(100, satiety.value + 25)
-    xp.value += 5
-    showText('+25 сытости, +5 XP')
-    // Повышение уровня
-    while (xp.value >= xpToNext.value) {
-        xp.value -= xpToNext.value
-        level.value++
-        showText(`УРОВЕНЬ ${level.value}!`, 3000)
+    if (!hasFish.value) {
+        showText('Нет рыбы в холодильнике! Сходи на рыбалку', 2000)
+        return
+    }
+    
+    const fish = getBestAvailableFish()
+    if (!fish) return
+    
+    removeFishByType(fish.type, 1)
+    
+    satiety.value = Math.min(100, satiety.value + fish.satiety)
+    const leveled = addXp(fish.xp)
+    
+    showText(`+${fish.satiety} сытости, +${fish.xp} XP (${fish.name})`, 2000)
+    
+    if (leveled) {
+        showText(`УРОВЕНЬ ${getPenguinLevel()}!`, 3000)
     }
 }
 
-// Лечение
 const heal = () => {
     health.value = Math.min(100, health.value + 5)
-    showText(' +5 здоровья')
+    showText('+5 здоровья', 1000)
 }
 
+import { watch } from 'vue'
+watch([satiety, health], () => {
+    statCss.value = satiety.value + '%'
+    healthCss.value = health.value + '%'
+})
 </script>
 
 
@@ -80,7 +115,7 @@ const heal = () => {
                 </div>
             </div>
             <div class="stat-card level-badge-mini">
-                <img src="../assets/kubok.png" alt=""> {{ level }} | <img src="../assets/star.png" alt=""> {{ xp }}/{{
+                <img src="../assets/kubok.png" alt=""> {{ getPenguinLevel()}} | <img src="../assets/star.png" alt=""> {{ penguinXp }}/{{
                     xpToNext }}
             </div>
         </div>
@@ -118,9 +153,10 @@ const heal = () => {
                 <img src="../assets/staya.png" class="nav-icon" alt="" />
                 <span>Стая</span>
             </router-link>
-        </div>
-        <div v-if="message" class="message-toast">{{ message }}</div>
     </div>
+        
+    <div v-if="message" class="message-toast">{{ message }}</div>
+       </div> 
 </template>
 
 

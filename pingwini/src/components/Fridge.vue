@@ -1,13 +1,37 @@
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import useGacha from '../composables/useGacha'
 
 const router = useRouter()
-const { fishCount } = useGacha()
+const { fishInventory } = useGacha()
 
 function goBack() {
   router.push('/')
 }
+
+const fishGroups = computed(() => {
+  if (!fishInventory.value || fishInventory.value.length === 0) return []
+
+  const groups = [
+    { name: 'Мелкая рыба', key: 'small', count: 0, icon: '' },
+    { name: 'Речная рыба', key: 'river', count: 0, icon: '' },
+    { name: 'Морская рыба', key: 'sea', count: 0, icon: '' },
+    { name: 'Кальмары', key: 'squid', count: 0, icon: '' },
+    { name: 'Королевская', key: 'royal', count: 0, icon: '' }
+  ]
+
+  for (const fish of fishInventory.value) {
+    const group = groups.find(g => g.key === fish.type)
+    if (group) group.count += fish.amount
+  }
+
+  return groups.filter(g => g.count > 0)
+})
+
+const totalFish = computed(() => {
+  return fishGroups.value.reduce((sum, g) => sum + g.count, 0)
+})
 </script>
 
 <template>
@@ -15,15 +39,34 @@ function goBack() {
     <div class="header">
       <button class="back-btn" @click="goBack">←</button>
       <span class="title">Холодильник</span>
-      <div class="fish-total">🐟 {{ fishCount }}</div>
+      <div class="fish-total">🐟 {{ totalFish }}</div>
     </div>
 
     <div class="content">
-      <div class="fish-icon">🐟</div>
-      <h2>Запас рыбы</h2>
-      <p class="count-big">{{ fishCount }}</p>
-      <p class="hint" v-if="fishCount > 0">Можно покормить Пико!</p>
-      <p class="hint" v-else>Отправляйся на рыбалку, чтобы наполнить холодильник</p>
+      <div class="fish-icon">🧊</div>
+      <h2>Запасы рыбы</h2>
+
+      <div v-if="fishGroups.length === 0" class="empty-fridge">
+        <p>Холодильник пуст...</p>
+        <p>🎣 Иди на рыбалку, Пико голоден!</p>
+      </div>
+
+      <div v-else class="fish-list">
+        <div v-for="group in fishGroups" :key="group.key" class="fish-group">
+          <div class="group-header">
+            <span class="group-icon">{{ group.icon }}</span>
+            <span class="group-name">{{ group.name }}</span>
+            <span class="group-count">×{{ group.count }}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: (group.count / totalFish * 100) + '%' }"></div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="totalFish > 0" class="hint">
+        🐧 Пико может покормиться из холодильника!
+      </div>
     </div>
   </div>
 </template>
@@ -71,7 +114,6 @@ function goBack() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1;
   min-height: 80vh;
 }
 
@@ -82,18 +124,74 @@ function goBack() {
 
 h2 {
   font-weight: 500;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.fish-list {
+  width: 80%;
+  max-width: 400px;
+  margin: 20px auto;
+}
+
+.fish-group {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.group-icon {
+  font-size: 24px;
+}
+
+.group-name {
+  flex: 1;
+  margin-left: 10px;
+  font-size: 14px;
+}
+
+.group-count {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #4ade80;
+  border-radius: 10px;
+  transition: width 0.3s;
+}
+
+.empty-fridge {
+  text-align: center;
+  color: #bdc3c7;
+  margin-top: 40px;
+}
+
+.empty-fridge p:first-child {
+  font-size: 20px;
   margin-bottom: 10px;
 }
 
-.count-big {
-  font-size: 64px;
-  font-weight: bold;
-  margin: 0;
-}
-
 .hint {
-  margin-top: 20px;
+  margin-top: 30px;
   opacity: 0.7;
-  font-size: 16px;
+  font-size: 14px;
+  text-align: center;
 }
 </style>

@@ -1,86 +1,188 @@
 import { ref } from 'vue'
 
-const STORAGE_KEY = 'pingwini_gacha'
 
-// База пингвинов (id, имя, редкость, картинка)
-const penguinBase = [
-    { id: 1, name: 'Пингвин Адели', rarity: 'common', image: '/src/assets/penguins/adelie.png' },
-    { id: 2, name: 'Императорский пингвин', rarity: 'legendary', image: '/src/assets/penguins/emperor.png' },
-    { id: 3, name: 'Папуанский пингвин', rarity: 'rare', image: '/src/assets/penguins/gentoo.png' },
-    { id: 4, name: 'Королевский пингвин', rarity: 'epic', image: '/src/assets/penguins/king.png' },
-    { id: 5, name: 'Малый пингвин', rarity: 'common', image: '/src/assets/penguins/little.png' },
-    { id: 6, name: 'Хохлатый пингвин', rarity: 'rare', image: '/src/assets/penguins/macaroni.png' },
-    { id: 7, name: 'Золотой пингвин', rarity: 'legendary', image: '/src/assets/penguins/golden.png' }
+const fishCount = ref(0)
+const fishInventory = ref([])
+const tickets = ref(0)
+const inventory = ref([])
+
+
+const penguinLevel = ref(1)
+const penguinXp = ref(0)
+
+
+const penguinsDB = [
+  { id: 1, name: 'Пингвин Адели', rarity: 'common', image: '/src/assets/penguins/adelie.png' },
+  { id: 2, name: 'Императорский пингвин', rarity: 'legendary', image: '/src/assets/penguins/emperor.png' },
+  { id: 3, name: 'Папуанский пингвин', rarity: 'rare', image: '/src/assets/penguins/gentoo.png' },
+  { id: 4, name: 'Королевский пингвин', rarity: 'epic', image: '/src/assets/penguins/king.png' },
+  { id: 5, name: 'Малый пингвин', rarity: 'common', image: '/src/assets/penguins/little.png' },
+  { id: 6, name: 'Хохлатый пингвин', rarity: 'rare', image: '/src/assets/penguins/macaroni.png' },
+  { id: 7, name: 'Золотой пингвин', rarity: 'legendary', image: '/src/assets/penguins/golden.png' }
 ]
 
-// Загрузка из localStorage или стартовые значения
-const saved = localStorage.getItem(STORAGE_KEY)
-const initialData = saved ? JSON.parse(saved) : { tickets: 0, fishCount: 0, inventory: [] }
 
-const tickets = ref(initialData.tickets)
-const fishCount = ref(initialData.fishCount)
-const inventory = ref(initialData.inventory) // массив id пингвинов
-
-function save() {
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-            tickets: tickets.value,
-            fishCount: fishCount.value,
-            inventory: inventory.value
-        })
-    )
+function saveToLocalStorage() {
+  localStorage.setItem('penguin_fish', fishCount.value)
+  localStorage.setItem('penguin_fish_inventory', JSON.stringify(fishInventory.value))
+  localStorage.setItem('penguin_tickets', tickets.value)
+  localStorage.setItem('penguin_inventory', JSON.stringify(inventory.value))
+  localStorage.setItem('penguin_level', penguinLevel.value)
+  localStorage.setItem('penguin_xp', penguinXp.value)
 }
 
-/** Добавляет билеты (например, с рыбалки) */
+function loadFromLocalStorage() {
+  const savedFish = localStorage.getItem('penguin_fish')
+  const savedFishInv = localStorage.getItem('penguin_fish_inventory')
+  const savedTickets = localStorage.getItem('penguin_tickets')
+  const savedInv = localStorage.getItem('penguin_inventory')
+  const savedLevel = localStorage.getItem('penguin_level')
+  const savedXp = localStorage.getItem('penguin_xp')
+
+  if (savedFish) fishCount.value = parseInt(savedFish)
+  if (savedFishInv) fishInventory.value = JSON.parse(savedFishInv)
+  if (savedTickets) tickets.value = parseInt(savedTickets)
+  if (savedInv) inventory.value = JSON.parse(savedInv)
+  if (savedLevel) penguinLevel.value = parseInt(savedLevel)
+  if (savedXp) penguinXp.value = parseInt(savedXp)
+}
+
+
+function addFish(amount, type = 'small') {
+  fishCount.value += amount
+
+  for (let i = 0; i < fishInventory.value.length; i++) {
+    if (fishInventory.value[i].type === type) {
+      fishInventory.value[i].amount += amount
+      saveToLocalStorage()
+      return
+    }
+  }
+  fishInventory.value.push({ type, amount })
+  saveToLocalStorage()
+}
+
+function getFishByType(type) {
+  for (let i = 0; i < fishInventory.value.length; i++) {
+    if (fishInventory.value[i].type === type) {
+      return fishInventory.value[i].amount
+    }
+  }
+  return 0
+}
+
+function getTotalFish() {
+  let sum = 0
+  for (let i = 0; i < fishInventory.value.length; i++) {
+    sum = sum + fishInventory.value[i].amount
+  }
+  return sum
+}
+
+function removeFishByType(type, amount = 1) {
+  for (let i = 0; i < fishInventory.value.length; i++) {
+    if (fishInventory.value[i].type === type) {
+      if (fishInventory.value[i].amount < amount) return false
+      
+      fishInventory.value[i].amount -= amount
+      fishCount.value -= amount
+      
+      if (fishInventory.value[i].amount === 0) {
+        fishInventory.value.splice(i, 1)
+      }
+      
+      saveToLocalStorage()
+      return true
+    }
+  }
+  return false
+}
+
+
 function addTicket(amount = 1) {
-    tickets.value += amount
-    save()
+  tickets.value += amount
+  saveToLocalStorage()
 }
 
-/** Тратит один билет, возвращает true, если билеты были */
-function spendTicket() {
-    if (tickets.value <= 0) return false
-    tickets.value--
-    save()
-    return true
-}
-
-/** Добавляет рыбу (с рыбалки) */
-function addFish(amount = 1) {
-    fishCount.value += amount
-    save()
-}
-
-/** Находит пингвина по id */
-function getPenguinById(id) {
-    return penguinBase.find((p) => p.id === id) || null
-}
-
-/*
- * Крутка гачи: тратит 1 билет, возвращает выпавшего пингвина или null.
- * Редкость: common 60%, rare 25%, epic 10%, legendary 5%.
- */
 function pullGacha() {
-    if (!spendTicket()) return null
+  if (tickets.value <= 0) return null
 
-    // Определяем редкость по случайному числу
-    const rand = Math.random() * 100
-    let rarity
-    if (rand < 60) rarity = 'common'
-    else if (rand < 85) rarity = 'rare'
-    else if (rand < 95) rarity = 'epic'
-    else rarity = 'legendary'
+  tickets.value--
+  
+  const rand = Math.random()
+  let selectedRarity = 'common'
 
-    const pool = penguinBase.filter((p) => p.rarity === rarity)
-    const pulled = pool[Math.floor(Math.random() * pool.length)]
-    inventory.value.push(pulled.id)
-    save()
-    return pulled
+  if (rand < 0.05) selectedRarity = 'legendary'
+  else if (rand < 0.15) selectedRarity = 'epic'
+  else if (rand < 0.35) selectedRarity = 'rare'
+  else selectedRarity = 'common'
+
+  const available = []
+  for (let i = 0; i < penguinsDB.length; i++) {
+    if (penguinsDB[i].rarity === selectedRarity) {
+      available.push(penguinsDB[i])
+    }
+  }
+  const pulled = available[Math.floor(Math.random() * available.length)]
+
+  inventory.value.push(pulled.id)
+  saveToLocalStorage()
+  return pulled
 }
+
+function getPenguinById(id) {
+  for (let i = 0; i < penguinsDB.length; i++) {
+    if (penguinsDB[i].id === id) {
+      return penguinsDB[i]
+    }
+  }
+  return null
+}
+
+
+function addXp(amount) {
+  penguinXp.value += amount
+  let leveledUp = false
+
+  while (penguinXp.value >= penguinLevel.value * 100) {
+    penguinXp.value -= penguinLevel.value * 100
+    penguinLevel.value++
+    leveledUp = true
+  }
+
+  saveToLocalStorage()
+  return leveledUp
+}
+
+function getPenguinLevel() {
+  return penguinLevel.value
+}
+
+
+loadFromLocalStorage()
+
 
 export default function useGacha() {
-    return {
-        penguinBase, tickets, fishCount, inventory, addTicket, spendTicket, addFish, pullGacha, getPenguinById
-    }
+  return {
+    fishCount,
+    fishInventory,
+    tickets,
+    inventory,
+    penguinLevel,
+    penguinXp,
+
+    penguinBase: penguinsDB,
+
+    addFish,
+    getFishByType,
+    getTotalFish,
+    removeFishByType,
+
+    addTicket,
+    pullGacha,
+    getPenguinById,
+
+    addXp,
+    getPenguinLevel
+  }
 }
