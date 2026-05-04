@@ -1,12 +1,13 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import useGacha from '../composables/useGacha'
 
 const router = useRouter()
-const { inventory, getPenguinById, penguinBase } = useGacha()
+const { inventory, getPenguinById, penguinBase, fragments } = useGacha()
 
-// Преобразуем id вхождения в объекты пингвинов
+const selectedId = ref(null)
+
 const ownedPenguins = computed(() => {
   const result = []
   for (let i = 0; i < inventory.value.length; i++) {
@@ -18,7 +19,6 @@ const ownedPenguins = computed(() => {
   return result
 })
 
-// Все пингвины с пометкой, есть ли они у игрока
 const allPenguins = computed(() => {
   const result = []
   for (let i = 0; i < penguinBase.length; i++) {
@@ -30,20 +30,20 @@ const allPenguins = computed(() => {
         break
       }
     }
+    const frags = fragments.value[penguin.id] || 0
     result.push({
       id: penguin.id,
       name: penguin.name,
       rarity: penguin.rarity,
       image: penguin.image,
-      owned: owned
+      owned: owned,
+      fragments: frags
     })
   }
   
-  // Сортировка
   const sorted = []
   const order = ['legendary', 'epic', 'rare', 'common']
 
-  // Сначала полученные по редкости
   for (let r = 0; r < order.length; r++) {
     for (let i = 0; i < result.length; i++) {
       if (result[i].rarity === order[r] && result[i].owned) {
@@ -52,7 +52,6 @@ const allPenguins = computed(() => {
     }
   }
   
-  // Потом неполученные по редкости
   for (let r = 0; r < order.length; r++) {
     for (let i = 0; i < result.length; i++) {
       if (result[i].rarity === order[r] && !result[i].owned) {
@@ -64,7 +63,6 @@ const allPenguins = computed(() => {
   return sorted
 })
 
-// Считаем только уникальных пингвинов
 const ownedCount = computed(() => {
   const unique = []
   for (let i = 0; i < inventory.value.length; i++) {
@@ -85,6 +83,14 @@ const ownedCount = computed(() => {
 const totalCount = computed(() => {
   return penguinBase.length
 })
+
+function selectPenguin(id) {
+  if (selectedId.value === id) {
+    selectedId.value = null
+  } else {
+    selectedId.value = id
+  }
+}
 
 function goBack() {
   router.push({ name: 'home' })
@@ -109,15 +115,28 @@ function goBack() {
         v-for="penguin in allPenguins"
         :key="penguin.id"
         class="penguin-card"
-        :class="{ locked: !penguin.owned }"
+        :class="{ locked: !penguin.owned, expanded: selectedId === penguin.id }"
+        @click="selectPenguin(penguin.id)"
       >
         <img :src="penguin.image" :alt="penguin.name" />
         <div class="name">{{ penguin.name }}</div>
         <div class="rarity" :class="penguin.rarity">
           {{ penguin.rarity }}
         </div>
-        <div v-if="!penguin.owned" class="locked-overlay">
-          🔒
+        
+        <div v-if="selectedId === penguin.id" class="card-details">
+          <div v-if="penguin.owned" class="owned-badge">✅ Получен</div>
+          <div v-else class="fragment-details">
+            <p>Фрагменты: {{ penguin.fragments }} / 10</p>
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: (penguin.fragments * 10) + '%' }"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div v-if="!penguin.owned" class="locked-overlay">🔒</div>
+        <div v-if="!penguin.owned && penguin.fragments > 0 && selectedId !== penguin.id" class="fragments-badge">
+          {{ penguin.fragments }}/10
         </div>
       </div>
     </div>
@@ -181,8 +200,19 @@ function goBack() {
   border-radius: 20px;
   padding: 15px;
   text-align: center;
-  backdrop-filter: blur(5px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+  cursor: pointer;
+}
+
+.penguin-card.locked {
+  opacity: 0.4;
+  filter: grayscale(80%);
+}
+
+.penguin-card.expanded {
+  grid-column: span 2;
+  grid-row: span 2;
 }
 
 .penguin-card img {
@@ -195,11 +225,6 @@ function goBack() {
   margin-bottom: 8px;
 }
 
-.penguin-card.locked {
-  opacity: 0.4;
-  filter: grayscale(80%);
-}
-
 .name {
   font-weight: bold;
   font-size: 14px;
@@ -207,7 +232,6 @@ function goBack() {
 
 .rarity {
   font-size: 12px;
-  opacity: 0.7;
   text-transform: capitalize;
   margin-top: 4px;
   padding: 2px 8px;
@@ -219,4 +243,56 @@ function goBack() {
 .rarity.rare { background: #3498db; }
 .rarity.epic { background: #9b59b6; }
 .rarity.legendary { background: #f1c40f; color: #000; }
+
+.locked-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 40px;
+}
+
+.fragments-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #f39c12;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.card-details {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.owned-badge {
+  background: #4caf50;
+  padding: 6px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.fragment-details p {
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #f39c12;
+  border-radius: 10px;
+}
 </style>

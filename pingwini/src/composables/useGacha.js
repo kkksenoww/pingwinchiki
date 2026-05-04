@@ -5,7 +5,7 @@ const fishCount = ref(0)
 const fishInventory = ref([])
 const tickets = ref(0)
 const inventory = ref([])
-
+const fragments = ref({})
 
 const penguinLevel = ref(1)
 const penguinXp = ref(0)
@@ -27,6 +27,7 @@ function saveToLocalStorage() {
   localStorage.setItem('penguin_fish_inventory', JSON.stringify(fishInventory.value))
   localStorage.setItem('penguin_tickets', tickets.value)
   localStorage.setItem('penguin_inventory', JSON.stringify(inventory.value))
+  localStorage.setItem('penguin_fragments', JSON.stringify(fragments.value))
   localStorage.setItem('penguin_level', penguinLevel.value)
   localStorage.setItem('penguin_xp', penguinXp.value)
 }
@@ -36,6 +37,7 @@ function loadFromLocalStorage() {
   const savedFishInv = localStorage.getItem('penguin_fish_inventory')
   const savedTickets = localStorage.getItem('penguin_tickets')
   const savedInv = localStorage.getItem('penguin_inventory')
+  const savedFragments = localStorage.getItem('penguin_fragments')
   const savedLevel = localStorage.getItem('penguin_level')
   const savedXp = localStorage.getItem('penguin_xp')
 
@@ -43,6 +45,7 @@ function loadFromLocalStorage() {
   if (savedFishInv) fishInventory.value = JSON.parse(savedFishInv)
   if (savedTickets) tickets.value = parseInt(savedTickets)
   if (savedInv) inventory.value = JSON.parse(savedInv)
+  if (savedFragments) fragments.value = JSON.parse(savedFragments)
   if (savedLevel) penguinLevel.value = parseInt(savedLevel)
   if (savedXp) penguinXp.value = parseInt(savedXp)
 }
@@ -111,11 +114,24 @@ function pullGacha() {
   
   const rand = Math.random()
   let selectedRarity = 'common'
+  let fullPenguinChance = 0
 
-  if (rand < 0.05) selectedRarity = 'legendary'
-  else if (rand < 0.15) selectedRarity = 'epic'
-  else if (rand < 0.35) selectedRarity = 'rare'
-  else selectedRarity = 'common'
+  if (rand < 0.05) {
+    selectedRarity = 'legendary'
+    fullPenguinChance = 0.05
+  }
+  else if (rand < 0.15) {
+    selectedRarity = 'epic'
+    fullPenguinChance = 0.15
+  }
+  else if (rand < 0.35) {
+    selectedRarity = 'rare'
+    fullPenguinChance = 0.25
+  }
+  else {
+    selectedRarity = 'common'
+    fullPenguinChance = 0.4
+  }
 
   const available = []
   for (let i = 0; i < penguinsDB.length; i++) {
@@ -125,9 +141,58 @@ function pullGacha() {
   }
   const pulled = available[Math.floor(Math.random() * available.length)]
 
-  inventory.value.push(pulled.id)
+  const fullChance = Math.random()
+  if (fullChance < fullPenguinChance) {
+    let alreadyOwned = false
+    for (let i = 0; i < inventory.value.length; i++) {
+      if (inventory.value[i] === pulled.id) {
+        alreadyOwned = true
+        break
+      }
+    }
+    if (!alreadyOwned) {
+      inventory.value.push(pulled.id)
+      saveToLocalStorage()
+      return { type: 'penguin', penguin: pulled }
+    }
+  }
+
+  const fragAmount = Math.floor(Math.random() * 3) + 1
+  if (!fragments.value[pulled.id]) {
+    fragments.value[pulled.id] = 0
+  }
+  fragments.value[pulled.id] += fragAmount
+
+  if (fragments.value[pulled.id] >= 10) {
+    fragments.value[pulled.id] -= 10
+    let alreadyOwned = false
+    for (let i = 0; i < inventory.value.length; i++) {
+      if (inventory.value[i] === pulled.id) {
+        alreadyOwned = true
+        break
+      }
+    }
+    if (!alreadyOwned) {
+      inventory.value.push(pulled.id)
+    }
+    saveToLocalStorage()
+    return { type: 'fragments', penguin: pulled, amount: fragAmount, collected: true }
+  }
+
   saveToLocalStorage()
-  return pulled
+  return { type: 'fragments', penguin: pulled, amount: fragAmount, collected: false }
+}
+
+function pullGacha10() {
+  const results = []
+  for (let i = 0; i < 10; i++) {
+    if (tickets.value <= 0) break
+    const result = pullGacha()
+    if (result) {
+      results.push(result)
+    }
+  }
+  return results
 }
 
 function getPenguinById(id) {
@@ -168,6 +233,7 @@ export default function useGacha() {
     fishInventory,
     tickets,
     inventory,
+    fragments,
     penguinLevel,
     penguinXp,
 
@@ -180,6 +246,7 @@ export default function useGacha() {
 
     addTicket,
     pullGacha,
+    pullGacha10,
     getPenguinById,
 
     addXp,
