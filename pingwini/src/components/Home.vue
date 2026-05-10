@@ -29,7 +29,6 @@ const bestAvailableFish = computed(() => {
 const feedMessage = ref('')
 let feedMsgTimeout = null
 
-// реальное время
 let passiveTimer = null
 onMounted(() => {
     processPassiveProgress()
@@ -92,7 +91,6 @@ function goToStart() {
     <div v-else class="home-container">
         <img src="../assets/snejinki.png" class="fon" alt="" />
 
-        <!-- Верхняя панель -->
         <div class="stats-panel-mini">
             <div class="stat-card">
                 <img src="../assets/fish.png" alt="" /> {{ roundedSatiety }}%
@@ -114,20 +112,16 @@ function goToStart() {
             <div class="medicine-count">💊 {{ medicineCount }}</div>
         </div>
 
-        <!-- Пингвин -->
         <div class="penguin-wrapper">
             <img :src="penguinStageImage" alt="Пико" class="penguin-img" />
             <div class="stage-label">{{ penguinStage === 'baby' ? 'Малыш' : penguinStage === 'young' ? 'Юный' :
                 penguinStage === 'adult' ? 'Взрослый' : 'Мудрец' }}</div>
         </div>
 
-        <!-- Сообщение о кормлении/лечении -->
         <div v-if="feedMessage" class="feed-msg">{{ feedMessage }}</div>
 
-        <!-- Подсказка при болезни -->
         <p v-if="isSick" class="sick-hint">🤒 Пико болен! Покормите его или используйте лекарство.</p>
 
-        <!-- Кнопки -->
         <div class="action-buttons-mini">
             <button @click="feed">🐟 Кормить</button>
             <button v-if="medicineCount > 0 && health < 100" @click="heal" class="heal-btn">💊 Лечить</button>
@@ -135,18 +129,11 @@ function goToStart() {
 
         <!-- Нижняя навигация -->
         <div class="bottom-nav-mini">
-            <router-link to="/ribalka" class="nav-item">
-                <img src="../assets/fishing.png" class="nav-icon" alt="" /><span>Рыбалка</span>
-            </router-link>
-            <router-link to="/fridge" class="nav-item">
-                <img src="../assets/holodil.png" class="nav-icon" alt="" /><span>Холодильник</span>
-            </router-link>
-            <router-link to="/gacha" class="nav-item">
-                <img src="../assets/gacha.png" class="nav-icon" alt="" /><span>Гача</span>
-            </router-link>
-            <router-link to="/collection" class="nav-item">
-                <img src="../assets/staya.png" class="nav-icon" alt="" /><span>Стая</span>
-            </router-link>
+            <router-link to="/ribalka" class="nav-item"><span class="nav-icon">🎣</span><span>Рыбалка</span></router-link>
+            <router-link to="/fridge" class="nav-item"><span class="nav-icon">🧊</span><span>Холодильник</span></router-link>
+            <router-link to="/home" class="nav-item"><span class="nav-icon">🏠</span><span>Дом</span></router-link>
+            <router-link to="/gacha" class="nav-item"><span class="nav-icon">🎴</span><span>Гача</span></router-link>
+            <router-link to="/collection" class="nav-item"><span class="nav-icon">🐧</span><span>Стая</span></router-link>
         </div>
     </div>
 </template>
@@ -161,7 +148,7 @@ function goToStart() {
     justify-content: space-between;
     min-height: 93vh;
     background: radial-gradient(circle at 70% 20%, #3bc1ff, #004f72);
-    padding: 20px 20px 10px;
+    padding: 20px;
     overflow: hidden;
     font-family: system-ui, sans-serif;
 }
@@ -170,7 +157,6 @@ function goToStart() {
     position: absolute;
 }
 
-/* Верхняя панель статистики */
 .stats-panel-mini {
     display: flex;
     flex-wrap: wrap;
@@ -217,20 +203,6 @@ function goToStart() {
     width: v-bind(statCss);
 }
 
-.speech-bubble {
-    position: absolute;
-    background: white;
-    border-radius: 30px;
-    padding: 6px 14px;
-    top: 60px;
-    left: 80%;
-    white-space: nowrap;
-    font-weight: bold;
-    color: #2c3e66;
-    box-shadow: 0 2px 8px black;
-    z-index: 3;
-}
-
 .health-fill {
     background: #e74c3c;
     width: v-bind(healthCss);
@@ -262,7 +234,6 @@ function goToStart() {
     font-weight: 600;
 }
 
-/* Пингвин */
 .penguin-wrapper {
     margin: 20px 0 10px;
     text-align: center;
@@ -295,7 +266,6 @@ function goToStart() {
     border-radius: 20px;
 }
 
-/* Сообщение */
 .feed-msg {
     background: rgba(0, 0, 0, 0.75);
     color: #ffd966;
@@ -317,7 +287,6 @@ function goToStart() {
     z-index: 2;
 }
 
-/* Кнопки действий */
 .action-buttons-mini {
     display: flex;
     gap: 20px;
@@ -352,16 +321,14 @@ function goToStart() {
     color: #1e3b4f;
 }
 
-/* Нижняя навигация */
 .bottom-nav-mini {
     display: flex;
     justify-content: space-evenly;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px);
-    padding: 12px 16px;
+    padding: 10px 8px;
     width: 100%;
-    z-index: 2;
+    z-index: 10;
 }
 
 .nav-item {
@@ -370,32 +337,20 @@ function goToStart() {
     align-items: center;
     text-decoration: none;
     color: white;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    gap: 6px;
-    transition: transform 0.1s;
-    min-width: 64px;
-}
-
-.nav-item:active {
-    transform: scale(0.94);
+    gap: 4px;
+    min-width: 56px;
 }
 
 .nav-icon {
-    width: 38px;
-    height: 38px;
-    object-fit: contain;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    padding: 6px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 24px;
 }
 
-.router-link-active .nav-icon {
-    background: rgba(255, 255, 255, 0.35);
+.nav-item.router-link-active {
+    color: #f39c12;
 }
 
-/* Оверлей смерти */
 .dead-overlay {
     position: fixed;
     top: 0;

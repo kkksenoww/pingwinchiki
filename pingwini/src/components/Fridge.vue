@@ -59,6 +59,15 @@ function goBack() { router.push('/home') }
         </div>
       </div>
     </div>
+
+    <!-- Навигация -->
+    <div class="bottom-nav-mini">
+      <router-link to="/ribalka" class="nav-item"><span class="nav-icon">🎣</span><span>Рыбалка</span></router-link>
+      <router-link to="/fridge" class="nav-item"><span class="nav-icon">🧊</span><span>Холодильник</span></router-link>
+      <router-link to="/home" class="nav-item"><span class="nav-icon">🏠</span><span>Дом</span></router-link>
+      <router-link to="/gacha" class="nav-item"><span class="nav-icon">🎴</span><span>Гача</span></router-link>
+      <router-link to="/collection" class="nav-item"><span class="nav-icon">🐧</span><span>Стая</span></router-link>
+    </div>
   </div>
 </template>
 
@@ -68,6 +77,10 @@ function goBack() { router.push('/home') }
   color: white;
   font-family: system-ui, sans-serif;
   background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(../assets/fon_holod.jpg);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -101,11 +114,11 @@ function goBack() { router.push('/home') }
 }
 
 .content {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 80vh;
 }
 
 .fish-list {
@@ -126,11 +139,6 @@ function goBack() { router.push('/home') }
   gap: 8px;
   position: relative;
   cursor: pointer;
-  transition: background 0.2s;
-}
-
-.fish-item:hover {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 .fish-item.expiring {
@@ -144,16 +152,11 @@ function goBack() { router.push('/home') }
 .fish-species {
   font-size: 14px;
   font-weight: 500;
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .fish-time {
   font-size: 12px;
   color: #ccc;
-  margin-left: auto;
 }
 
 .delete-btn {
@@ -176,6 +179,36 @@ function goBack() { router.push('/home') }
 .empty-fridge {
   text-align: center;
   color: #bdc3c7;
-  margin-top: 40px;
+  font-size: 18px;
+}
+
+.bottom-nav-mini {
+  display: flex;
+  justify-content: space-evenly;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  padding: 10px 8px;
+  width: 100%;
+  z-index: 10;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  gap: 4px;
+  min-width: 56px;
+}
+
+.nav-icon {
+  font-size: 24px;
+}
+
+.nav-item.router-link-active {
+  color: #f39c12;
 }
 </style>

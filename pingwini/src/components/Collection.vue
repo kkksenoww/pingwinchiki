@@ -62,7 +62,6 @@ function goBack() { router.push('/home') }
           <div v-if="penguin.owned">
             <p>Фрагменты: {{ penguin.frags }}</p>
 
-            <!-- Шансы помощи -->
             <div class="help-chances" v-if="penguin.owned">
               <p><strong>Помощь каждые 20 мин:</strong></p>
               <p>💊 Шанс: {{ (getStasiHelpChances(penguin.id).medChance * 100).toFixed(1) }}%</p>
@@ -91,6 +90,15 @@ function goBack() { router.push('/home') }
         <div v-if="!penguin.owned && penguin.frags > 0" class="fragments-badge">{{ penguin.frags }}/10</div>
       </div>
     </div>
+
+    <!-- Навигация -->
+    <div class="bottom-nav-mini">
+      <router-link to="/ribalka" class="nav-item"><span class="nav-icon">🎣</span><span>Рыбалка</span></router-link>
+      <router-link to="/fridge" class="nav-item"><span class="nav-icon">🧊</span><span>Холодильник</span></router-link>
+      <router-link to="/home" class="nav-item"><span class="nav-icon">🏠</span><span>Дом</span></router-link>
+      <router-link to="/gacha" class="nav-item"><span class="nav-icon">🎴</span><span>Гача</span></router-link>
+      <router-link to="/collection" class="nav-item"><span class="nav-icon">🐧</span><span>Стая</span></router-link>
+    </div>
   </div>
 </template>
 
@@ -100,6 +108,9 @@ function goBack() { router.push('/home') }
   background: linear-gradient(135deg, #00416a, #0f2027);
   color: white;
   font-family: system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .convert-btn {
@@ -261,7 +272,6 @@ function goBack() { router.push('/home') }
   margin-top: 5px;
 }
 
-/* Новый блок для отображения шансов */
 .help-chances {
   background: rgba(255,255,255,0.1);
   border-radius: 8px;
@@ -272,5 +282,36 @@ function goBack() { router.push('/home') }
 
 .help-chances p {
   margin: 4px 0;
+}
+
+.bottom-nav-mini {
+  display: flex;
+  justify-content: space-evenly;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  padding: 10px 8px;
+  width: 100%;
+  z-index: 10;
+  margin-top: auto;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  gap: 4px;
+  min-width: 56px;
+}
+
+.nav-icon {
+  font-size: 24px;
+}
+
+.nav-item.router-link-active {
+  color: #f39c12;
 }
 </style>

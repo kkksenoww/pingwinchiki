@@ -63,7 +63,6 @@ function goBack() {
     </div>
 
     <div class="gacha-area">
-      <!-- Одиночный результат -->
       <div v-if="pulledPenguin && !showMulti" class="result-card">
         <div class="penguin-image">
           <img :src="pulledPenguin.image" :alt="pulledPenguin.name" />
@@ -80,7 +79,6 @@ function goBack() {
         </div>
       </div>
 
-      <!-- Результаты 10 круток -->
       <div v-if="showMulti" class="results-scroll">
         <div v-for="(result, index) in multiResults" class="mini-row">
           <img :src="result.penguin.image" :alt="result.penguin.name" />
@@ -91,12 +89,10 @@ function goBack() {
         </div>
       </div>
 
-      <!-- Ошибка -->
       <div v-if="showError" class="error-message">
         Недостаточно карточек!
       </div>
 
-      <!-- Кнопки -->
       <div class="pull-buttons">
         <button class="pull-btn" @click="doPull" :disabled="tickets <= 0">
           🎴 1 крутка
@@ -108,6 +104,15 @@ function goBack() {
 
       <p v-if="tickets <= 0" class="no-tickets">Нет карточек! Идите на рыбалку.</p>
     </div>
+
+    <!-- Навигация -->
+    <div class="bottom-nav-mini">
+      <router-link to="/ribalka" class="nav-item"><span class="nav-icon">🎣</span><span>Рыбалка</span></router-link>
+      <router-link to="/fridge" class="nav-item"><span class="nav-icon">🧊</span><span>Холодильник</span></router-link>
+      <router-link to="/home" class="nav-item"><span class="nav-icon">🏠</span><span>Дом</span></router-link>
+      <router-link to="/gacha" class="nav-item"><span class="nav-icon">🎴</span><span>Гача</span></router-link>
+      <router-link to="/collection" class="nav-item"><span class="nav-icon">🐧</span><span>Стая</span></router-link>
+    </div>
   </div>
 </template>
 
@@ -117,6 +122,8 @@ function goBack() {
   background: linear-gradient(135deg, #1a2a6c, #162452, #0e1d3b);
   color: white;
   font-family: system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -150,6 +157,7 @@ function goBack() {
 }
 
 .gacha-area {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -211,7 +219,6 @@ function goBack() {
   font-weight: bold;
 }
 
-/* Результаты 10 круток - простой список */
 .results-scroll {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 15px;
@@ -304,5 +311,35 @@ function goBack() {
 .no-tickets {
   color: #e74c3c;
   font-size: 16px;
+}
+
+.bottom-nav-mini {
+  display: flex;
+  justify-content: space-evenly;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  padding: 10px 8px;
+  width: 100%;
+  z-index: 10;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  gap: 4px;
+  min-width: 56px;
+}
+
+.nav-icon {
+  font-size: 24px;
+}
+
+.nav-item.router-link-active {
+  color: #f39c12;
 }
 </style>

@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import useGacha from '../composables/useGacha'
 
 const router = useRouter()
-const { fishCount, addFish, addTicket, getPenguinLevel } = useGacha()
+const { fishInventory, addFish, addTicket, getPenguinLevel } = useGacha()
 
 const isFishing = ref(false)
 const progress = ref(0)
@@ -15,6 +15,7 @@ let fishingInterval = null
 let messageTimeout = null
 
 const currentLevel = computed(() => getPenguinLevel())
+const fishCount = computed(() => fishInventory.value.length)
 
 const fishPool = [
   { name: 'Мелкая рыбка', value: 1, type: 'small', minLevel: 1, chance: 35, icon: '🐟' },
@@ -65,7 +66,6 @@ function startFishing() {
       fishingStage.value = 'caught'
       const fish = getFishByLevel()
       caughtFish.value = fish
-      // ⚡ Передаём название рыбы
       const added = addFish(fish.value, fish.type, fish.name)
       if (!added) {
         resultMessage.value = '❄️ Холодильник полон! Рыба не поместилась.'
@@ -109,15 +109,11 @@ onUnmounted(() => {
         <div class="voda"></div>
         <div class="udochka-icon">🎣</div>
       </div>
-      <div class="pingvinchik">
-        <span class="pingva">🐧</span>
-        <span class="palochka">🎣</span>
-      </div>
       <div class="fishing-status">
         <span v-if="fishingStage === 'casting'">Забрасываем удочку...</span>
         <span v-if="fishingStage === 'waiting'">Ждём поклёвку...</span>
         <span v-if="fishingStage === 'biting'">Клюёт! 🎣</span>
-        <span v-if="fishingStage === 'caught' && caughtFish">{{ caughtFish.icon }} {{ caughtFish.name }} поймана!</span>
+        <span v-if="fishingStage === 'caught' && caughtFish">{{ caughtFish.icon }} {{ caughtFish.name }} пойман(а)!</span>
       </div>
     </div>
 
@@ -130,26 +126,27 @@ onUnmounted(() => {
       </div>
       <div v-if="resultMessage" class="result-message">{{ resultMessage }}</div>
     </div>
+
+    <div class="bottom-nav-mini">
+      <router-link to="/ribalka" class="nav-item"><span class="nav-icon">🎣</span><span>Рыбалка</span></router-link>
+      <router-link to="/fridge" class="nav-item"><span class="nav-icon">🧊</span><span>Холодильник</span></router-link>
+      <router-link to="/home" class="nav-item"><span class="nav-icon">🏠</span><span>Дом</span></router-link>
+      <router-link to="/gacha" class="nav-item"><span class="nav-icon">🎴</span><span>Гача</span></router-link>
+      <router-link to="/collection" class="nav-item"><span class="nav-icon">🐧</span><span>Стая</span></router-link>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .fishing-page {
-  --bg-top: #0f405c;
-  --bg-bottom: #1b6d8a;
-  --orange-btn: #e07c2c;
-  --orange-shadow: #a0581a;
-  --gray-bg: #102532;
-  --text-white: #f0f0f0;
-  --udochka-size: 40px;
-  --udochka-bottom: 95px;
-
-  background: linear-gradient(var(--bg-top), var(--bg-bottom));
+  background: url('../assets/arctic_ice.jpg');
+  background-size: cover;
+  background-position: center;
   min-height: 97vh;
   display: flex;
   flex-direction: column;
-  color: var(--text-white);
-  font-family: system-ui, 'Segoe UI', 'Helvetica', sans-serif;
+  color: #f0f0f0;
+  font-family: system-ui, sans-serif;
 }
 
 .header {
@@ -185,20 +182,11 @@ onUnmounted(() => {
 .game-zone {
   flex: 1;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  position: relative;
+  gap: 30px;
   min-height: 400px;
-  background: radial-gradient(circle at 50% 40%, #197c9e, #0a3850);
-}
-
-.udochka-icon {
-  position: absolute;
-  bottom: var(--udochka-bottom);
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: var(--udochka-size);
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .ice-lunka {
@@ -222,34 +210,30 @@ onUnmounted(() => {
   border-radius: 0 0 50% 50%;
 }
 
-.pingvinchik {
+.udochka-icon {
   position: absolute;
-  bottom: 25px;
-  right: 25px;
-  text-align: center;
+  bottom: 95px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 40px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
-.pingva {
-  font-size: 65px;
-  display: block;
-}
-
-.palochka {
-  position: absolute;
-  top: -25px;
-  left: 35px;
-  font-size: 32px;
-  transform: rotate(-20deg);
+.fishing-status {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
 }
 
 .panel {
-  background: var(--gray-bg);
+  background: rgba(0, 0, 0, 0.6);
   padding: 20px 20px 30px;
 }
 
 .catch-button {
   width: 100%;
-  background: var(--orange-btn);
+  background: #e07c2c;
   border: none;
   padding: 14px;
   border-radius: 60px;
@@ -258,13 +242,12 @@ onUnmounted(() => {
   color: white;
   margin-bottom: 16px;
   cursor: pointer;
-  box-shadow: 0 4px 0 var(--orange-shadow);
-  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: 0 4px 0 #a0581a;
 }
 
 .catch-button:active:not(:disabled) {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 var(--orange-shadow);
+  box-shadow: 0 2px 0 #a0581a;
 }
 
 .catch-button:disabled {
@@ -285,20 +268,45 @@ onUnmounted(() => {
   height: 100%;
   background: #5fbb84;
   border-radius: 15px;
-  width: 0%;
   width: v-bind(progress + '%');
 }
 
 .result-message {
   text-align: center;
-  font-size: 14px;
-  color: #ffd966;
+  font-size: 15px;
+  color: white;
   padding-top: 8px;
+  font-weight: bold;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
 }
 
-.fishing-status {
-  margin-top: 20px;
-  font-size: 1.2rem;
-  font-weight: bold;
+.bottom-nav-mini {
+  display: flex;
+  justify-content: space-evenly;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  padding: 10px 8px;
+  width: 100%;
+  z-index: 10;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  gap: 4px;
+  min-width: 56px;
+}
+
+.nav-icon {
+  font-size: 24px;
+}
+
+.nav-item.router-link-active {
+  color: #f39c12;
 }
 </style>
