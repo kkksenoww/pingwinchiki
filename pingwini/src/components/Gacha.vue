@@ -107,11 +107,26 @@ function goBack() {
 
     <!-- Навигация -->
     <div class="bottom-nav-mini">
-      <router-link to="/ribalka" class="nav-item"><span class="nav-icon">🎣</span><span>Рыбалка</span></router-link>
-      <router-link to="/fridge" class="nav-item"><span class="nav-icon">🧊</span><span>Холодильник</span></router-link>
-      <router-link to="/home" class="nav-item"><span class="nav-icon">🏠</span><span>Дом</span></router-link>
-      <router-link to="/gacha" class="nav-item"><span class="nav-icon">🎴</span><span>Гача</span></router-link>
-      <router-link to="/collection" class="nav-item"><span class="nav-icon">🐧</span><span>Стая</span></router-link>
+      <router-link to="/ribalka" class="nav-item">
+        <img src="../assets/fishingg.png" class="nav-icon" alt="" />
+        <span>Рыбалка</span>
+      </router-link>
+      <router-link to="/fridge" class="nav-item">
+        <img src="../assets/holodil.png" class="nav-icon" alt="" />
+        <span>Холодильник</span>
+      </router-link>
+      <router-link to="/home" class="nav-item">
+        <img src="../assets/p_home.png" class="nav-icon" alt="" />
+        <span>Дом</span>
+      </router-link>
+      <router-link to="/gacha" class="nav-item">
+        <img src="../assets/gacha.png" class="nav-icon" alt="" />
+        <span>Гача</span>
+      </router-link>
+      <router-link to="/collection" class="nav-item">
+        <img src="../assets/staya.png" class="nav-icon" alt="" />
+        <span>Стая</span>
+      </router-link>
     </div>
   </div>
 </template>
@@ -336,7 +351,11 @@ function goBack() {
 }
 
 .nav-icon {
-  font-size: 24px;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
 }
 
 .nav-item.router-link-active {
