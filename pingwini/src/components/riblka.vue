@@ -65,7 +65,6 @@ function startFishing() {
       fishingStage.value = 'caught'
       const fish = getFishByLevel()
       caughtFish.value = fish
-      // ⚡ Передаём название рыбы
       const added = addFish(fish.value, fish.type, fish.name)
       if (!added) {
         resultMessage.value = '❄️ Холодильник полон! Рыба не поместилась.'
@@ -101,7 +100,7 @@ onUnmounted(() => {
     <div class="header">
       <button class="back-btn" @click="goBack">←</button>
       <span class="page-title">Рыбалка</span>
-      <div class="fish-counter">🐟 {{ fishCount }}</div>
+      <div class="fish-counter">🐟 {{ fishCount }} / 100</div>
     </div>
 
     <div class="game-zone">

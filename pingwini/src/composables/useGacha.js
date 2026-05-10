@@ -381,6 +381,20 @@ const penguinStage = computed(() => getPenguinStage())
 const penguinStageImage = computed(() => penguinStageImages[getPenguinStage()])
 const hungerRate = computed(() => HUNGER_RATES[getPenguinStage()])
 
+// --- Хороший финал ---
+const isGoodEnding = computed(() => {
+  if (isDead.value) return false
+  // Пингвин 25 уровня
+  if (penguinLevel.value < 25) return false
+  // Все 7 пингвинов в инвентаре
+  if (inventory.value.length !== penguinsDB.length) return false
+  // Каждый 5-го уровня (максимальный)
+  for (const p of penguinsDB) {
+    if ((penguinLevels.value[p.id] || 1) < MAX_PENGUIN_LEVEL) return false
+  }
+  return true
+})
+
 export default function useGacha() {
   return {
     fishCount, fishInventory, tickets, inventory, fragments, penguinLevel, penguinXp,
@@ -390,6 +404,7 @@ export default function useGacha() {
     penguinStageImage,
     hungerRate,
     MAX_PENGUIN_LEVEL,
+    isGoodEnding,             // <-- добавлено
     addFish, removeFishByType, removeFishByIndex, getTotalFish, getFishByType, addTicket,
     pullGacha, pullGacha10, getPenguinById, upgradePenguin, convertFragmentsToFish,
     feedPenguin, healPenguin, addXp, getPenguinLevel, resetGame,

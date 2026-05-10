@@ -7,7 +7,8 @@ const router = useRouter()
 const {
     health, satiety, isSick, isDead, medicineCount,
     penguinLevel, penguinXp, penguinStage, penguinStageImage,
-    feedPenguin, healPenguin, getFishByType, resetGame, processPassiveProgress
+    feedPenguin, healPenguin, getFishByType, resetGame, processPassiveProgress,
+    isGoodEnding          
 } = useGacha()
 
 const roundedSatiety = computed(() => Math.round(satiety.value))
@@ -29,7 +30,6 @@ const bestAvailableFish = computed(() => {
 const feedMessage = ref('')
 let feedMsgTimeout = null
 
-// реальное время
 let passiveTimer = null
 onMounted(() => {
     processPassiveProgress()
@@ -40,7 +40,6 @@ onMounted(() => {
 onUnmounted(() => {
     clearInterval(passiveTimer)
 })
-
 
 function feed() {
     const fishType = bestAvailableFish.value
@@ -78,7 +77,21 @@ function goToStart() {
 </script>
 
 <template>
-    <div v-if="isDead" class="dead-overlay">
+    <!-- Хороший финал -->
+    <div v-if="isGoodEnding" class="good-ending-overlay">
+        <div class="good-ending-message">
+            <h1>🎉 Поздравляем! 🐧</h1>
+            <p>Пико прожил долгую счастливую жизнь, окружённый верной стаей!</p>
+            <p>Вы достигли всех целей и подарили ему лучшую судьбу.</p>
+            <div class="dead-buttons">
+                <button @click="resetGame">Новая игра</button>
+                <button @click="goToStart">Выйти в меню</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Смерть -->
+    <div v-else-if="isDead" class="dead-overlay">
         <div class="dead-message">
             <h1>😢 Пико покинул нас...</h1>
             <p>Вы не уследили за своим питомцем.</p>
@@ -89,6 +102,7 @@ function goToStart() {
         </div>
     </div>
 
+    <!-- Обычный экран -->
     <div v-else class="home-container">
         <img src="../assets/snejinki.png" class="fon" alt="" />
 
@@ -151,7 +165,6 @@ function goToStart() {
     </div>
 </template>
 
-
 <style scoped>
 .home-container {
     position: relative;
@@ -168,6 +181,13 @@ function goToStart() {
 
 .fon {
     position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.15;
+    pointer-events: none;
 }
 
 /* Верхняя панель статистики */
@@ -449,5 +469,48 @@ function goToStart() {
 
 .dead-buttons button:last-child {
     background: #3498db;
+}
+
+.good-ending-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.good-ending-message {
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    color: white;
+    padding: 40px;
+    border-radius: 24px;
+    text-align: center;
+    max-width: 380px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.good-ending-message h1 {
+    margin: 0 0 10px;
+    font-size: 2rem;
+}
+
+.good-ending-message p {
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+}
+
+.good-ending-message .dead-buttons button {
+    background: #ffd700;
+    color: #1e3b4f;
+    font-weight: bold;
+}
+
+.good-ending-message .dead-buttons button:last-child {
+    background: #81c784;
 }
 </style>

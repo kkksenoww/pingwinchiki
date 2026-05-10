@@ -12,7 +12,6 @@ onMounted(() => {
 
 function newGame() {
     localStorage.clear()
-    // Правильный URL домашней страницы (учитывает базовый путь)
     const homeUrl = router.resolve({ name: 'home' }).href
     window.location.href = homeUrl
 }
