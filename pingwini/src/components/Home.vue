@@ -492,16 +492,19 @@ function goToStart() {
     text-align: center;
     max-width: 380px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        font-family: system-ui, sans-serif;
 }
 
 .good-ending-message h1 {
     margin: 0 0 10px;
     font-size: 2rem;
+        font-family: system-ui, sans-serif;
 }
 
 .good-ending-message p {
     margin-bottom: 12px;
     font-size: 1.1rem;
+        font-family: system-ui, sans-serif;
 }
 
 .good-ending-message .dead-buttons button {
