@@ -4,22 +4,53 @@ import { useRouter } from 'vue-router'
 import useGacha from '../composables/useGacha'
 
 const router = useRouter()
-const { tickets, pullGacha } = useGacha()
+const { tickets, pullGacha, pullGacha10 } = useGacha()
 
 const pulledPenguin = ref(null)
+const pullType = ref('')
+const fragmentAmount = ref(0)
+const showError = ref(false)
+const collectedPenguin = ref(null)
+const multiResults = ref([])
+const showMulti = ref(false)
 
 function doPull() {
+  showError.value = false
+  showMulti.value = false
+  collectedPenguin.value = null
   const result = pullGacha()
-  if (result) {
-    pulledPenguin.value = result
-  } else {
-    pulledPenguin.value = null
-    alert('Недостаточно карточек!')
+  if (!result) {
+    showError.value = true
+    return
+  }
+  
+  pullType.value = result.type
+  pulledPenguin.value = result.penguin
+  
+  if (result.type === 'fragments') {
+    fragmentAmount.value = result.amount
+    if (result.collected) {
+      collectedPenguin.value = result.penguin
+    }
   }
 }
 
+function doPull10() {
+  showError.value = false
+  pulledPenguin.value = null
+  collectedPenguin.value = null
+  
+  if (tickets.value < 10) {
+    showError.value = true
+    return
+  }
+  
+  multiResults.value = pullGacha10()
+  showMulti.value = true
+}
+
 function goBack() {
-  router.push('/')
+  router.push({ name: 'home' })
 }
 </script>
 
@@ -32,19 +63,48 @@ function goBack() {
     </div>
 
     <div class="gacha-area">
-      <div v-if="pulledPenguin" class="result-card">
+      <!-- Одиночный результат -->
+      <div v-if="pulledPenguin && !showMulti" class="result-card">
         <div class="penguin-image">
           <img :src="pulledPenguin.image" :alt="pulledPenguin.name" />
         </div>
         <div class="penguin-name">{{ pulledPenguin.name }}</div>
         <div class="penguin-rarity" :class="pulledPenguin.rarity">
-          {{ pulledPenguin.rarity.toUpperCase() }}
+          {{ pulledPenguin.rarity }}
+        </div>
+        <div v-if="pullType === 'fragments'" class="fragment-text">
+          +{{ fragmentAmount }} фрагментов
+        </div>
+        <div v-if="collectedPenguin" class="collected-text">
+          🎉 Пингвин собран!
         </div>
       </div>
 
-      <button class="pull-btn" @click="doPull" :disabled="tickets <= 0">
-        🎴 Крутить (1 карточка)
-      </button>
+      <!-- Результаты 10 круток -->
+      <div v-if="showMulti" class="results-scroll">
+        <div v-for="(result, index) in multiResults" class="mini-row">
+          <img :src="result.penguin.image" :alt="result.penguin.name" />
+          <span class="mini-name">{{ result.penguin.name }}</span>
+          <span class="mini-rarity" :class="result.penguin.rarity">
+            {{ result.type === 'penguin' ? '🎁' : '+' + result.amount + ' фраг.' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Ошибка -->
+      <div v-if="showError" class="error-message">
+        Недостаточно карточек!
+      </div>
+
+      <!-- Кнопки -->
+      <div class="pull-buttons">
+        <button class="pull-btn" @click="doPull" :disabled="tickets <= 0">
+          🎴 1 крутка
+        </button>
+        <button class="pull-btn pull-10" @click="doPull10" :disabled="tickets < 10">
+          🔥 10 круток
+        </button>
+      </div>
 
       <p v-if="tickets <= 0" class="no-tickets">Нет карточек! Идите на рыбалку.</p>
     </div>
@@ -53,7 +113,7 @@ function goBack() {
 
 <style scoped>
 .gacha-container {
-  min-height: 100vh;
+  min-height: 97vh;
   background: linear-gradient(135deg, #1a2a6c, #162452, #0e1d3b);
   color: white;
   font-family: system-ui, sans-serif;
@@ -94,7 +154,7 @@ function goBack() {
   flex-direction: column;
   align-items: center;
   padding: 40px 20px;
-  gap: 30px;
+  gap: 20px;
 }
 
 .result-card {
@@ -137,17 +197,87 @@ function goBack() {
 .penguin-rarity.epic { background: #9b59b6; }
 .penguin-rarity.legendary { background: #f1c40f; color: #000; }
 
+.fragment-text {
+  margin-top: 10px;
+  font-size: 16px;
+  color: #ffd700;
+}
+
+.collected-text {
+  margin-top: 10px;
+  background: #4caf50;
+  padding: 8px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+/* Результаты 10 круток - простой список */
+.results-scroll {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 15px;
+  padding: 15px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.mini-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mini-row:last-child {
+  border-bottom: none;
+}
+
+.mini-row img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  padding: 4px;
+}
+
+.mini-name {
+  flex: 1;
+  font-size: 14px;
+}
+
+.mini-rarity {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.mini-rarity.common { color: #7f8c8d; }
+.mini-rarity.rare { color: #3498db; }
+.mini-rarity.epic { color: #9b59b6; }
+.mini-rarity.legendary { color: #f1c40f; }
+
+.pull-buttons {
+  display: flex;
+  gap: 15px;
+}
+
 .pull-btn {
   background: #f39c12;
   border: none;
-  padding: 16px 40px;
-  font-size: 20px;
+  padding: 16px 30px;
+  font-size: 18px;
   font-weight: bold;
   color: white;
   border-radius: 60px;
   cursor: pointer;
   box-shadow: 0 6px 0 #b86d0e;
-  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.pull-10 {
+  background: #e74c3c;
+  box-shadow: 0 6px 0 #a93226;
 }
 
 .pull-btn:active:not(:disabled) {
@@ -155,9 +285,20 @@ function goBack() {
   box-shadow: 0 2px 0 #b86d0e;
 }
 
+.pull-10:active:not(:disabled) {
+  box-shadow: 0 2px 0 #a93226;
+}
+
 .pull-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.error-message {
+  background: #e74c3c;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
 }
 
 .no-tickets {

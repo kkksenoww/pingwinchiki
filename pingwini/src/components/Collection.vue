@@ -1,19 +1,44 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import useGacha from '../composables/useGacha'
 
 const router = useRouter()
-const { inventory, getPenguinById } = useGacha()
+const {
+  inventory, fragments, penguinBase, upgradePenguin,
+  penguinLevels, convertFragmentsToFish, MAX_PENGUIN_LEVEL,
+  getStasiHelpChances
+} = useGacha()
 
-// Преобразуем id вхождения в объекты пингвинов
-const ownedPenguins = computed(() =>
-  inventory.value.map((id) => getPenguinById(id)).filter((p) => p !== null)
-)
+const selectedId = ref(null)
 
-function goBack() {
-  router.push('/')
+const allPenguins = computed(() => {
+  const all = penguinBase.map(p => ({
+    ...p,
+    owned: inventory.value.includes(p.id),
+    frags: fragments.value[p.id] || 0,
+    level: penguinLevels.value[p.id] || 1
+  }))
+  const order = ['legendary', 'epic', 'rare', 'common']
+  return all.sort((a,b) => {
+    if (a.owned !== b.owned) return a.owned ? -1 : 1
+    return order.indexOf(a.rarity) - order.indexOf(b.rarity)
+  })
+})
+
+function toggleSelect(id) {
+  selectedId.value = selectedId.value === id ? null : id
 }
+
+function upgrade(id) {
+  upgradePenguin(id)
+}
+
+function convert(id) {
+  convertFragmentsToFish(id)
+}
+
+function goBack() { router.push('/home') }
 </script>
 
 <template>
@@ -21,25 +46,49 @@ function goBack() {
     <div class="header">
       <button class="back-btn" @click="goBack">←</button>
       <span class="title">Стая</span>
-      <div class="count">{{ ownedPenguins.length }} пингвинов</div>
+      <span class="count">{{ inventory.length }} / {{ penguinBase.length }}</span>
     </div>
 
-    <div v-if="ownedPenguins.length === 0" class="empty">
-      <p>У вас пока нет пингвинов.</p>
-      <p>Ловите рыбу и получайте карточки для Гачи!</p>
-    </div>
-
-    <div class="grid" v-else>
-      <div
-        v-for="penguin in ownedPenguins"
-        :key="penguin.id"
-        class="penguin-card"
-      >
+    <div class="grid">
+      <div v-for="penguin in allPenguins" class="penguin-card"
+           :class="{ locked: !penguin.owned, expanded: selectedId === penguin.id }"
+           @click="toggleSelect(penguin.id)">
         <img :src="penguin.image" :alt="penguin.name" />
         <div class="name">{{ penguin.name }}</div>
-        <div class="rarity" :class="penguin.rarity">
-          {{ penguin.rarity }}
+        <div class="rarity" :class="penguin.rarity">{{ penguin.rarity }}</div>
+        <div v-if="penguin.owned" class="level">⭐{{ penguin.level }}</div>
+
+        <div v-if="selectedId === penguin.id" class="card-details">
+          <div v-if="penguin.owned">
+            <p>Фрагменты: {{ penguin.frags }}</p>
+
+            <!-- Шансы помощи -->
+            <div class="help-chances" v-if="penguin.owned">
+              <p><strong>Помощь каждые 20 мин:</strong></p>
+              <p>💊 Шанс: {{ (getStasiHelpChances(penguin.id).medChance * 100).toFixed(1) }}%</p>
+              <p>🐟 Шанс: {{ (getStasiHelpChances(penguin.id).fishChance * 100).toFixed(1) }}%</p>
+            </div>
+
+            <div v-if="penguin.level < MAX_PENGUIN_LEVEL">
+              <button v-if="penguin.frags >= penguin.level * 10" @click.stop="upgrade(penguin.id)" class="upgrade-btn">
+                Улучшить ({{ penguin.level * 10 }} фрагментов)
+              </button>
+              <p v-else>Нужно {{ penguin.level * 10 }} фрагментов для улучшения</p>
+            </div>
+            <div v-else>
+              <p>Макс. уровень</p>
+              <button v-if="penguin.frags >= 10" @click.stop="convert(penguin.id)" class="convert-btn">
+                Обменять 10 фрагментов на 5 рыбы
+              </button>
+            </div>
+          </div>
+          <div v-else>
+            <p>Фрагменты: {{ penguin.frags }} / 10</p>
+          </div>
         </div>
+
+        <div v-if="!penguin.owned" class="locked-overlay">🔒</div>
+        <div v-if="!penguin.owned && penguin.frags > 0" class="fragments-badge">{{ penguin.frags }}/10</div>
       </div>
     </div>
   </div>
@@ -47,10 +96,14 @@ function goBack() {
 
 <style scoped>
 .collection-page {
-  min-height: 100vh;
+  min-height: 97vh;
   background: linear-gradient(135deg, #00416a, #0f2027);
   color: white;
   font-family: system-ui, sans-serif;
+}
+
+.convert-btn {
+  background: #4caf50;
 }
 
 .header {
@@ -102,8 +155,19 @@ function goBack() {
   border-radius: 20px;
   padding: 15px;
   text-align: center;
-  backdrop-filter: blur(5px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+  cursor: pointer;
+}
+
+.penguin-card.locked {
+  opacity: 0.4;
+  filter: grayscale(80%);
+}
+
+.penguin-card.expanded {
+  grid-column: span 2;
+  grid-row: span 2;
 }
 
 .penguin-card img {
@@ -123,7 +187,6 @@ function goBack() {
 
 .rarity {
   font-size: 12px;
-  opacity: 0.7;
   text-transform: capitalize;
   margin-top: 4px;
   padding: 2px 8px;
@@ -135,4 +198,79 @@ function goBack() {
 .rarity.rare { background: #3498db; }
 .rarity.epic { background: #9b59b6; }
 .rarity.legendary { background: #f1c40f; color: #000; }
+
+.locked-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 40px;
+}
+
+.fragments-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #f39c12;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.card-details {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.owned-badge {
+  background: #4caf50;
+  padding: 6px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.fragment-details p {
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #f39c12;
+  border-radius: 10px;
+}
+
+.upgrade-btn {
+  background: #f39c12;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 10px;
+  color: white;
+  font-weight: bold;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.help-info {
+  font-size: 0.8rem;
+  color: #bdc3c7;
+  margin-top: 5px;
+}
+
+/* Новый блок для отображения шансов */
+.help-chances {
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 8px;
+  margin: 8px 0;
+  font-size: 0.85rem;
+}
+
+.help-chances p {
+  margin: 4px 0;
+}
 </style>
