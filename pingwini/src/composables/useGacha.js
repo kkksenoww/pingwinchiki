@@ -177,7 +177,7 @@ function triggerStasiHelp() {
       const types = ['small', 'river', 'sea', 'squid', 'royal']
       const type = types[Math.floor(Math.random() * types.length)]
       const amount = type === 'royal' ? 1 : Math.floor(Math.random() * 2) + 1
-      for (let a = 0; a < amount; a++) addFish(1, type) 
+      for (let a = 0; a < amount; a++) addFish(1, type)
       helped = true
     }
   }
@@ -318,7 +318,7 @@ function convertFragmentsToFish(id) {
   if (frags < 10) return false
   const fishGain = Math.floor(frags / 10) * 5
   fragments.value[id] -= Math.floor(frags / 10) * 10
-  for (let i = 0; i < fishGain; i++) addFish(1, 'small') 
+  for (let i = 0; i < fishGain; i++) addFish(1, 'small', 'Мелкая рыбка')
   addLog(`Обменено фрагментов: получено ${fishGain} рыбы`)
   saveToLocalStorage()
   return true
