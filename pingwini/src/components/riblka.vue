@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import useGacha from '../composables/useGacha'
 
 const router = useRouter()
-const { fishInventory, addFish, addTicket, getPenguinLevel } = useGacha()
+const { fishInventory, addFish, addTicket, getPenguinLevel, tickets } = useGacha()
 
 const isFishing = ref(false)
 const progress = ref(0)
@@ -101,7 +101,10 @@ onUnmounted(() => {
     <div class="header">
       <button class="back-btn" @click="goBack">←</button>
       <span class="page-title">Рыбалка</span>
-      <div class="fish-counter">🐟 {{ fishCount }}</div>
+      <div class="header-stats">
+        <div class="fish-counter">🐟 {{ fishCount }}</div>
+        <div class="ticket-counter">🎟️ {{ tickets }}</div>
+      </div>
     </div>
 
     <div class="game-zone">
@@ -192,6 +195,18 @@ onUnmounted(() => {
   padding: 6px 15px;
   border-radius: 25px;
   font-size: 16px;
+}
+
+.ticket-counter {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 15px;
+  border-radius: 25px;
+  font-size: 16px;
+}
+
+.header-stats {
+  display: flex;
+  gap: 8px;
 }
 
 .game-zone {
