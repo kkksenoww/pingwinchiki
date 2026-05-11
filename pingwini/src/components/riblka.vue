@@ -17,39 +17,44 @@ let messageTimeout = null
 const currentLevel = computed(() => getPenguinLevel())
 const fishCount = computed(() => fishInventory.value.length)
 
-const fishPool = [
-  { name: 'Мелкая рыбка', value: 1, type: 'small', minLevel: 1, chance: 35, icon: '🐟' },
-  { name: 'Пескарь', value: 2, type: 'small', minLevel: 1, chance: 30, icon: '🐟' },
-  { name: 'Окунь', value: 3, type: 'river', minLevel: 2, chance: 15, icon: '🐠' },
-  { name: 'Карп', value: 4, type: 'river', minLevel: 3, chance: 10, icon: '🐠' },
-  { name: 'Лосось', value: 5, type: 'river', minLevel: 4, chance: 5, icon: '🐟' },
-  { name: 'Щука', value: 7, type: 'sea', minLevel: 5, chance: 3, icon: '🐡' },
-  { name: 'Сом', value: 10, type: 'sea', minLevel: 6, chance: 1.5, icon: '🐡' },
-  { name: 'Кальмар', value: 12, type: 'squid', minLevel: 7, chance: 0.3, icon: '🦑' },
-  { name: 'Осьминог', value: 15, type: 'squid', minLevel: 8, chance: 0.15, icon: '🦑' },
-  { name: 'Осётр', value: 20, type: 'royal', minLevel: 9, chance: 0.04, icon: '👑' },
-  { name: 'Королевская рыба', value: 30, type: 'royal', minLevel: 10, chance: 0.01, icon: '👑' }
-]
-
-function getFishByLevel() {
+const getFishByLevel = () => {
   const level = currentLevel.value
+
+  const fishPool = [
+    { name: 'Мелкая рыбка', value: 1, type: 'small', minLevel: 1, chance: 35 },
+    { name: 'Пескарь', value: 2, type: 'small', minLevel: 1, chance: 30 },
+    { name: 'Окунь', value: 3, type: 'river', minLevel: 2, chance: 15 },
+    { name: 'Карп', value: 4, type: 'river', minLevel: 3, chance: 10 },
+    { name: 'Лосось', value: 5, type: 'river', minLevel: 4, chance: 5 },
+    { name: 'Щука', value: 7, type: 'sea', minLevel: 5, chance: 3 },
+    { name: 'Сом', value: 10, type: 'sea', minLevel: 6, chance: 1.5 },
+    { name: 'Кальмар', value: 12, type: 'squid', minLevel: 7, chance: 0.3 },
+    { name: 'Осьминог', value: 15, type: 'squid', minLevel: 8, chance: 0.15 },
+    { name: 'Осётр', value: 20, type: 'royal', minLevel: 9, chance: 0.04 },
+    { name: 'Королевская рыба', value: 30, type: 'royal', minLevel: 10, chance: 0.01 }
+  ]
+
   const available = fishPool.filter(f => level >= f.minLevel)
   const totalChance = available.reduce((sum, f) => sum + f.chance, 0)
   let random = Math.random() * totalChance
+
   for (const fish of available) {
-    if (random < fish.chance) return fish
+    if (random < fish.chance) {
+      return { name: fish.name, value: fish.value, type: fish.type }
+    }
     random -= fish.chance
   }
-  return { name: 'Мелкая рыбка', value: 1, type: 'small', icon: '🐟' }
+
+  return { name: 'Мелкая рыбка', value: 1, type: 'small' }
 }
 
 function startFishing() {
   if (isFishing.value) return
+
   isFishing.value = true
   progress.value = 0
-  fishingStage.value = 'casting'
-  caughtFish.value = null
-  resultMessage.value = ''
+
+  if (messageTimeout) clearTimeout(messageTimeout)
 
   if (messageTimeout) clearTimeout(messageTimeout)
 
@@ -70,29 +75,25 @@ function startFishing() {
       if (!added) {
         resultMessage.value = '❄️ Холодильник полон! Рыба не поместилась.'
       } else {
-        const ticketChance = 0.2 + currentLevel.value * 0.02
-        if (Math.random() < ticketChance) {
-          addTicket(1)
-          resultMessage.value = `${fish.name} +${fish.value} рыбы! +1 билет`
-        } else {
-          resultMessage.value = `${fish.name} +${fish.value} рыбы!`
-        }
+        resultMessage.value = `${caught.name} +${caught.value} рыбы!`
       }
       isFishing.value = false
+
+      if (messageTimeout) clearTimeout(messageTimeout)
       messageTimeout = setTimeout(() => {
-        caughtFish.value = null
-        resultMessage.value = ''
-        fishingStage.value = ''
-      }, 3000)
+        if (resultMessage.value) resultMessage.value = ''
+      }, 2500)
     }
-  }, 50)
+  }, 30)
 }
 
-function goBack() { router.push('/home') }
+function goBack() {
+  router.push('/')
+}
 
 onUnmounted(() => {
-  clearInterval(fishingInterval)
-  clearTimeout(messageTimeout)
+  if (fishingInterval) clearInterval(fishingInterval)
+  if (messageTimeout) clearTimeout(messageTimeout)
 })
 </script>
 
@@ -122,11 +123,12 @@ onUnmounted(() => {
 
     <div class="panel">
       <button class="catch-button" :disabled="isFishing" @click="startFishing">
-        {{ isFishing ? 'Ловим...' : '🎣 Ловить' }}
+        {{ isFishing ? 'Ловим...' : 'Ловить' }}
       </button>
       <div class="progress">
-        <div class="progress-line"></div>
+        <div class="progress-line" :style="{ width: progress + '%' }"></div>
       </div>
+
       <div v-if="resultMessage" class="result-message">{{ resultMessage }}</div>
     </div>
 

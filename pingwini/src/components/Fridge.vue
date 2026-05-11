@@ -1,10 +1,10 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import useGacha from '../composables/useGacha'
 
 const router = useRouter()
-const { fishInventory, removeFishByIndex, removeExpiredFish } = useGacha()
+const { fishInventory } = useGacha()
 
 const selectedIndex = ref(null)
 let fridgeInterval = null
@@ -25,17 +25,28 @@ const typeIcons = {
   royal: '👑'
 }
 
-function getRemainingMinutes(timestamp) {
-  const remainingMs = 20 * 60 * 1000 - (Date.now() - timestamp)
-  return Math.max(0, Math.floor(remainingMs / 60000))
-}
+const fishGroups = computed(() => {
+  if (!fishInventory.value || fishInventory.value.length === 0) return []
 
-function removeFish(idx) {
-  removeFishByIndex(idx)
-  selectedIndex.value = null
-}
+  const groups = [
+    { name: 'Мелкая рыба', key: 'small', count: 0, icon: '' },
+    { name: 'Речная рыба', key: 'river', count: 0, icon: '' },
+    { name: 'Морская рыба', key: 'sea', count: 0, icon: '' },
+    { name: 'Кальмары', key: 'squid', count: 0, icon: '' },
+    { name: 'Королевская', key: 'royal', count: 0, icon: '' }
+  ]
 
-function goBack() { router.push('/home') }
+  for (const fish of fishInventory.value) {
+    const group = groups.find(g => g.key === fish.type)
+    if (group) group.count += fish.amount
+  }
+
+  return groups.filter(g => g.count > 0)
+})
+
+const totalFish = computed(() => {
+  return fishGroups.value.reduce((sum, g) => sum + g.count, 0)
+})
 </script>
 
 <template>
@@ -43,20 +54,33 @@ function goBack() { router.push('/home') }
     <div class="header">
       <button class="back-btn" @click="goBack">←</button>
       <span class="title">Холодильник</span>
-      <div class="fish-total">🐟 {{ fishInventory.length }}</div>
+      <div class="fish-total">🐟 {{ totalFish }}</div>
     </div>
 
     <div class="content">
-      <div v-if="fishInventory.length === 0" class="empty-fridge">Холодильник пуст...</div>
+      <div class="fish-icon">🧊</div>
+      <h2>Запасы рыбы</h2>
+
+      <div v-if="fishGroups.length === 0" class="empty-fridge">
+        <p>Холодильник пуст...</p>
+        <p>🎣 Иди на рыбалку, Пико голоден!</p>
+      </div>
+
       <div v-else class="fish-list">
-        <div v-for="(fish, index) in fishInventory" class="fish-item"
-          :class="{ 'expiring': getRemainingMinutes(fish.timestamp) <= 5 }"
-          @click="selectedIndex = selectedIndex === index ? null : index">
-          <span class="fish-icon">{{ typeIcons[fish.type] || '🐟' }}</span>
-          <span class="fish-species">{{ fish.species || fish.type }}</span>
-          <span class="fish-time">{{ getRemainingMinutes(fish.timestamp) }} мин</span>
-          <button v-if="selectedIndex === index" class="delete-btn" @click.stop="removeFish(index)">🗑️</button>
+        <div v-for="group in fishGroups" :key="group.key" class="fish-group">
+          <div class="group-header">
+            <span class="group-icon">{{ group.icon }}</span>
+            <span class="group-name">{{ group.name }}</span>
+            <span class="group-count">×{{ group.count }}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: (group.count / totalFish * 100) + '%' }"></div>
+          </div>
         </div>
+      </div>
+
+      <div v-if="totalFish > 0" class="hint">
+        🐧 Пико может покормиться из холодильника!
       </div>
     </div>
 
@@ -174,21 +198,47 @@ function goBack() { router.push('/home') }
   color: #ccc;
 }
 
-.delete-btn {
-  background: #e74c3c;
-  border: none;
-  color: white;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
+.fish-group {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.group-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.group-icon {
+  font-size: 24px;
+}
+
+.group-name {
+  flex: 1;
+  margin-left: 10px;
   font-size: 14px;
-  cursor: pointer;
-  position: absolute;
-  right: -8px;
-  top: -8px;
+}
+
+.group-count {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #4ade80;
+  border-radius: 10px;
+  transition: width 0.3s;
 }
 
 .empty-fridge {
@@ -229,5 +279,17 @@ function goBack() { router.push('/home') }
 
 .nav-item.router-link-active {
   color: #f39c12;
+}
+
+.empty-fridge p:first-child {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.hint {
+  margin-top: 30px;
+  opacity: 0.7;
+  font-size: 14px;
+  text-align: center;
 }
 </style>

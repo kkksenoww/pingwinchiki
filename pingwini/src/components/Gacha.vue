@@ -80,7 +80,7 @@ function goBack() {
       </div>
 
       <div v-if="showMulti" class="results-scroll">
-        <div v-for="(result, index) in multiResults" class="mini-row">
+        <div v-for="(result, index) in multiResults" :key="index" class="mini-row">
           <img :src="result.penguin.image" :alt="result.penguin.name" />
           <span class="mini-name">{{ result.penguin.name }}</span>
           <span class="mini-rarity" :class="result.penguin.rarity">
