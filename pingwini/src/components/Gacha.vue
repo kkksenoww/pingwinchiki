@@ -113,7 +113,7 @@ function goBack() {
 
 <style scoped>
 .gacha-container {
-  min-height: 100vh;
+  min-height: 97vh;
   background: linear-gradient(135deg, #1a2a6c, #162452, #0e1d3b);
   color: white;
   font-family: system-ui, sans-serif;

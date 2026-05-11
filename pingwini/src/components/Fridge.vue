@@ -6,8 +6,23 @@ import useGacha from '../composables/useGacha'
 const router = useRouter()
 const { fishInventory } = useGacha()
 
-function goBack() {
-  router.push('/')
+const selectedIndex = ref(null)
+let fridgeInterval = null
+
+onMounted(() => {
+  removeExpiredFish()
+  fridgeInterval = setInterval(() => {
+    removeExpiredFish()
+  }, 60 * 1000)
+})
+onUnmounted(() => clearInterval(fridgeInterval))
+
+const typeIcons = {
+  small: '🐟',
+  river: '🐠',
+  sea: '🐡',
+  squid: '🦑',
+  royal: '👑'
 }
 
 const fishGroups = computed(() => {
@@ -73,10 +88,10 @@ const totalFish = computed(() => {
 
 <style scoped>
 .fridge-page {
-  min-height: 100vh;
-  background: linear-gradient(180deg, #1a5276, #2c3e50);
+  min-height: 97vh;
   color: white;
   font-family: system-ui, sans-serif;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(../assets/fon_holod.jpg);
 }
 
 .header {
@@ -117,12 +132,41 @@ const totalFish = computed(() => {
   min-height: 80vh;
 }
 
-.fish-icon {
-  font-size: 80px;
-  margin-bottom: 20px;
+.fish-list {
+  width: 90%;
+  max-width: 500px;
+  margin: 20px auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-h2 {
+.fish-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.fish-item:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.fish-item.expiring {
+  border: 2px solid #ffaa00;
+}
+
+.fish-icon {
+  font-size: 20px;
+}
+
+.fish-species {
+  font-size: 14px;
   font-weight: 500;
   margin-bottom: 20px;
   text-align: center;

@@ -9,6 +9,8 @@ const { fishCount, addFish, addTicket, getPenguinLevel } = useGacha()
 const isFishing = ref(false)
 const progress = ref(0)
 const resultMessage = ref('')
+const fishingStage = ref('')
+const caughtFish = ref(null)
 let fishingInterval = null
 let messageTimeout = null
 
@@ -53,9 +55,16 @@ function startFishing() {
 
   if (messageTimeout) clearTimeout(messageTimeout)
 
+  if (messageTimeout) clearTimeout(messageTimeout)
+
+  const totalTime = 60
+  let step = 0
   fishingInterval = setInterval(() => {
-    progress.value += 2
-    if (progress.value >= 100) {
+    step++
+    progress.value = Math.min(100, (step / totalTime) * 100)
+    if (step === 10) fishingStage.value = 'waiting'
+    if (step === 40) fishingStage.value = 'biting'
+    if (step >= totalTime) {
       clearInterval(fishingInterval)
       progress.value = 100
 
@@ -71,7 +80,6 @@ function startFishing() {
       } else {
         resultMessage.value = `${caught.name} +${caught.value} рыбы!`
       }
-
       isFishing.value = false
 
       if (messageTimeout) clearTimeout(messageTimeout)
@@ -97,7 +105,7 @@ onUnmounted(() => {
     <div class="header">
       <button class="back-btn" @click="goBack">←</button>
       <span class="page-title">Рыбалка</span>
-      <div class="fish-counter">🐟 {{ fishCount }}</div>
+      <div class="fish-counter">🐟 {{ fishCount }} / 100</div>
     </div>
 
     <div class="game-zone">
@@ -109,13 +117,18 @@ onUnmounted(() => {
         <span class="pingva">🐧</span>
         <span class="palochka">🎣</span>
       </div>
+      <div class="fishing-status">
+        <span v-if="fishingStage === 'casting'">Забрасываем удочку...</span>
+        <span v-if="fishingStage === 'waiting'">Ждём поклёвку...</span>
+        <span v-if="fishingStage === 'biting'">Клюёт! 🎣</span>
+        <span v-if="fishingStage === 'caught' && caughtFish">{{ caughtFish.icon }} {{ caughtFish.name }} поймана!</span>
+      </div>
     </div>
 
     <div class="panel">
       <button class="catch-button" :disabled="isFishing" @click="startFishing">
         {{ isFishing ? 'Ловим...' : 'Ловить' }}
       </button>
-
       <div class="progress">
         <div class="progress-line" :style="{ width: progress + '%' }"></div>
       </div>
@@ -137,7 +150,7 @@ onUnmounted(() => {
   --udochka-bottom: 95px;
 
   background: linear-gradient(var(--bg-top), var(--bg-bottom));
-  min-height: 100vh;
+  min-height: 97vh;
   display: flex;
   flex-direction: column;
   color: var(--text-white);
@@ -278,6 +291,7 @@ onUnmounted(() => {
   background: #5fbb84;
   border-radius: 15px;
   width: 0%;
+  width: v-bind(progress + '%');
 }
 
 .result-message {
@@ -285,5 +299,11 @@ onUnmounted(() => {
   font-size: 14px;
   color: #ffd966;
   padding-top: 8px;
+}
+
+.fishing-status {
+  margin-top: 20px;
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 </style>

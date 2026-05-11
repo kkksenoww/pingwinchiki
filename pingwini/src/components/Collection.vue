@@ -95,6 +95,12 @@ function selectPenguin(id) {
 function goBack() {
   router.push({ name: 'home' })
 }
+
+function convert(id) {
+  convertFragmentsToFish(id)
+}
+
+function goBack() { router.push('/home') }
 </script>
 
 <template>
@@ -120,8 +126,36 @@ function goBack() {
       >
         <img :src="penguin.image" :alt="penguin.name" />
         <div class="name">{{ penguin.name }}</div>
-        <div class="rarity" :class="penguin.rarity">
-          {{ penguin.rarity }}
+        <div class="rarity" :class="penguin.rarity">{{ penguin.rarity }}</div>
+        <div v-if="penguin.owned" class="level">⭐{{ penguin.level }}</div>
+
+        <div v-if="selectedId === penguin.id" class="card-details">
+          <div v-if="penguin.owned">
+            <p>Фрагменты: {{ penguin.frags }}</p>
+
+            <!-- Шансы помощи -->
+            <div class="help-chances" v-if="penguin.owned">
+              <p><strong>Помощь каждые 20 мин:</strong></p>
+              <p>💊 Шанс: {{ (getStasiHelpChances(penguin.id).medChance * 100).toFixed(1) }}%</p>
+              <p>🐟 Шанс: {{ (getStasiHelpChances(penguin.id).fishChance * 100).toFixed(1) }}%</p>
+            </div>
+
+            <div v-if="penguin.level < MAX_PENGUIN_LEVEL">
+              <button v-if="penguin.frags >= penguin.level * 10" @click.stop="upgrade(penguin.id)" class="upgrade-btn">
+                Улучшить ({{ penguin.level * 10 }} фрагментов)
+              </button>
+              <p v-else>Нужно {{ penguin.level * 10 }} фрагментов для улучшения</p>
+            </div>
+            <div v-else>
+              <p>Макс. уровень</p>
+              <button v-if="penguin.frags >= 10" @click.stop="convert(penguin.id)" class="convert-btn">
+                Обменять 10 фрагментов на 5 рыбы
+              </button>
+            </div>
+          </div>
+          <div v-else>
+            <p>Фрагменты: {{ penguin.frags }} / 10</p>
+          </div>
         </div>
         
         <div v-if="selectedId === penguin.id" class="card-details">
@@ -145,10 +179,14 @@ function goBack() {
 
 <style scoped>
 .collection-page {
-  min-height: 100vh;
+  min-height: 97vh;
   background: linear-gradient(135deg, #00416a, #0f2027);
   color: white;
   font-family: system-ui, sans-serif;
+}
+
+.convert-btn {
+  background: #4caf50;
 }
 
 .header {
