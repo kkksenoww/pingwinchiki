@@ -133,7 +133,6 @@ function goBack() { router.push('/home') }
           <div v-if="penguin.owned">
             <p>Фрагменты: {{ penguin.frags }}</p>
 
-            <!-- Шансы помощи -->
             <div class="help-chances" v-if="penguin.owned">
               <p><strong>Помощь каждые 20 мин:</strong></p>
               <p>💊 Шанс: {{ (getStasiHelpChances(penguin.id).medChance * 100).toFixed(1) }}%</p>
@@ -174,6 +173,30 @@ function goBack() { router.push('/home') }
         </div>
       </div>
     </div>
+
+    <!-- Навигация -->
+    <div class="bottom-nav-mini">
+      <router-link to="/ribalka" class="nav-item">
+        <img src="../assets/fishingg.png" class="nav-icon" alt="" />
+        <span>Рыбалка</span>
+      </router-link>
+      <router-link to="/fridge" class="nav-item">
+        <img src="../assets/holodil.png" class="nav-icon" alt="" />
+        <span>Холодильник</span>
+      </router-link>
+      <router-link to="/home" class="nav-item">
+        <img src="../assets/p_home.png" class="nav-icon" alt="" />
+        <span>Дом</span>
+      </router-link>
+      <router-link to="/gacha" class="nav-item">
+        <img src="../assets/gacha.png" class="nav-icon" alt="" />
+        <span>Гача</span>
+      </router-link>
+      <router-link to="/collection" class="nav-item">
+        <img src="../assets/staya.png" class="nav-icon" alt="" />
+        <span>Стая</span>
+      </router-link>
+    </div>
   </div>
 </template>
 
@@ -183,6 +206,9 @@ function goBack() { router.push('/home') }
   background: linear-gradient(135deg, #00416a, #0f2027);
   color: white;
   font-family: system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .convert-btn {
@@ -332,5 +358,62 @@ function goBack() { router.push('/home') }
   height: 100%;
   background: #f39c12;
   border-radius: 10px;
+  color: white;
+  font-weight: bold;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.help-info {
+  font-size: 0.8rem;
+  color: #bdc3c7;
+  margin-top: 5px;
+}
+
+.help-chances {
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 8px;
+  margin: 8px 0;
+  font-size: 0.85rem;
+}
+
+.help-chances p {
+  margin: 4px 0;
+}
+
+.bottom-nav-mini {
+  display: flex;
+  justify-content: space-evenly;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  padding: 10px 8px;
+  width: 100%;
+  z-index: 10;
+  margin-top: auto;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  gap: 4px;
+  min-width: 56px;
+}
+
+.nav-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+}
+
+.nav-item.router-link-active {
+  color: #f39c12;
 }
 </style>

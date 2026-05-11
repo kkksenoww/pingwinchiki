@@ -5,6 +5,7 @@ import Riblka from './components/riblka.vue'
 import Gacha from './components/Gacha.vue'
 import Fridge from './components/Fridge.vue'
 import Collection from './components/Collection.vue'
+import notFound from './components/notFound.vue'
 
 const routes = [
   { path: '/', name: 'start', component: StartPage },
@@ -12,7 +13,8 @@ const routes = [
   { path: '/ribalka', name: 'ribalka', component: Riblka },
   { path: '/gacha', name: 'gacha', component: Gacha },
   { path: '/fridge', name: 'fridge', component: Fridge },
-  { path: '/collection', name: 'collection', component: Collection }
+  { path: '/collection', name: 'collection', component: Collection },
+  { path: '/:pathMatch(.*)*', name: 'not-found', component: notFound }
 ]
 
 const router = createRouter({

@@ -12,13 +12,13 @@ const penguinXp = ref(0)
 
 
 const penguinsDB = [
-  { id: 1, name: 'Пингвин Адели', rarity: 'common', image: '/src/assets/penguins/adelie.png' },
-  { id: 2, name: 'Императорский пингвин', rarity: 'legendary', image: '/src/assets/penguins/emperor.png' },
-  { id: 3, name: 'Папуанский пингвин', rarity: 'rare', image: '/src/assets/penguins/gentoo.png' },
-  { id: 4, name: 'Королевский пингвин', rarity: 'epic', image: '/src/assets/penguins/king.png' },
-  { id: 5, name: 'Малый пингвин', rarity: 'common', image: '/src/assets/penguins/little.png' },
-  { id: 6, name: 'Хохлатый пингвин', rarity: 'rare', image: '/src/assets/penguins/macaroni.png' },
-  { id: 7, name: 'Золотой пингвин', rarity: 'legendary', image: '/src/assets/penguins/golden.png' }
+  { id: 1, name: 'Пингвин Адели', rarity: 'common', image: '/src/assets/Адели.jpg' },
+  { id: 2, name: 'Императорский пингвин', rarity: 'legendary', image: '/src/assets/Императорский.jpg' },
+  { id: 3, name: 'Папуанский пингвин', rarity: 'rare', image: '/src/assets/Папуанский.jpg' },
+  { id: 4, name: 'Королевский пингвин', rarity: 'epic', image: '/src/assets/Королевский.jpg' },
+  { id: 5, name: 'Малый пингвин', rarity: 'common', image: '/src/assets/Малый.jpg' },
+  { id: 6, name: 'Хохлатый пингвин', rarity: 'rare', image: '/src/assets/Хохлатый.jpg' },
+  { id: 7, name: 'Золотой пингвин', rarity: 'legendary', image: '/src/assets/Золотой.jpg' }
 ]
 
 
