@@ -4,10 +4,12 @@ jobs:
   build_vue:
     runs-on: ubuntu-latest
     name: Build Vue
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
     - uses: actions/checkout@v4
     - id: Build-Vue
-      uses: xRealNeon/VuePagesAction@1.0.1
+      uses: xRealNeon/VuePagesAction@v2
       with:
         username: 'kkksenoww'
         reponame: 'pingwinchiki'
