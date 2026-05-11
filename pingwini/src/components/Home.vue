@@ -1,28 +1,85 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
 import useGacha from '../composables/useGacha'
 
-const router = useRouter()
-const {
-    health, satiety, isSick, isDead, medicineCount,
-    penguinLevel, penguinXp, penguinStage, penguinStageImage,
-    feedPenguin, healPenguin, getFishByType, resetGame, processPassiveProgress,
-    isGoodEnding          
+const { 
+  addXp, 
+  getPenguinLevel, 
+  penguinXp, 
+  penguinLevel,
+  removeFishByType,
+  getTotalFish,
+  getFishByType
 } = useGacha()
 
-const roundedSatiety = computed(() => Math.round(satiety.value))
-const roundedHealth = computed(() => Math.round(health.value))
-const roundedXp = computed(() => Math.round(penguinXp.value))
+const satiety = ref(70)
+const health = ref(100)
 
-const statCss = computed(() => Math.round(satiety.value) + '%')
-const healthCss = computed(() => Math.round(health.value) + '%')
-const xpToNext = computed(() => penguinLevel.value * 100)
+const message = ref('')
+let msgTimeout = null
+const showBubble = ref(false)
+const bubbleText = ref('')
 
-const bestAvailableFish = computed(() => {
-    const types = ['royal', 'squid', 'sea', 'river', 'small']
-    for (const t of types) {
-        if (getFishByType(t) > 0) return t
+const statCss = ref(satiety.value + '%')
+const healthCss = ref(health.value + '%')
+
+const xpToNext = computed(() => getPenguinLevel() * 100)
+
+const hasFish = computed(() => getTotalFish() > 0)
+
+const fishStats = {
+  small: { xp: 5, satiety: 25, name: 'Мелкая рыба' },
+  river: { xp: 12, satiety: 35, name: 'Речная рыба' },
+  sea: { xp: 20, satiety: 45, name: 'Морская рыба' },
+  squid: { xp: 30, satiety: 55, name: 'Кальмар' },
+  royal: { xp: 50, satiety: 75, name: 'Королевская рыба' }
+}
+
+const getBestAvailableFish = () => {
+  const types = ['royal', 'squid', 'sea', 'river', 'small']
+  for (const type of types) {
+    const amount = getFishByType(type)
+    if (amount > 0) {
+      return { type, ...fishStats[type] }
+    }
+  }
+  return null
+}
+
+const showText = (text, duration = 2000) => {
+    if (msgTimeout) clearTimeout(msgTimeout)
+    message.value = text
+    msgTimeout = setTimeout(() => {
+        message.value = ''
+    }, duration)
+}
+
+const tapPico = () => {
+    bubbleText.value = 'Пиу!'
+    showBubble.value = true
+    setTimeout(() => {
+        showBubble.value = false
+    }, 1200)
+}
+
+const feed = () => {
+    if (!hasFish.value) {
+        showText('Нет рыбы в холодильнике! Сходи на рыбалку', 2000)
+        return
+    }
+    
+    const fish = getBestAvailableFish()
+    if (!fish) return
+    
+    removeFishByType(fish.type, 1)
+    
+    satiety.value = Math.min(100, satiety.value + fish.satiety)
+    const leveled = addXp(fish.xp)
+    
+    showText(`+${fish.satiety} сытости, +${fish.xp} XP (${fish.name})`, 2000)
+    
+    if (leveled) {
+        showText(`УРОВЕНЬ ${getPenguinLevel()}!`, 3000)
     }
     return null
 })
@@ -59,21 +116,16 @@ function feed() {
     feedMsgTimeout = setTimeout(() => feedMessage.value = '', 2500)
 }
 
-function heal() {
-    if (!healPenguin()) {
-        feedMessage.value = 'Нет лекарств!'
-        clearTimeout(feedMsgTimeout)
-        feedMsgTimeout = setTimeout(() => feedMessage.value = '', 2000)
-    } else {
-        feedMessage.value = '+30 здоровья'
-        clearTimeout(feedMsgTimeout)
-        feedMsgTimeout = setTimeout(() => feedMessage.value = '', 2000)
-    }
+const heal = () => {
+    health.value = Math.min(100, health.value + 5)
+    showText('+5 здоровья', 1000)
 }
 
-function goToStart() {
-    router.push('/')
-}
+import { watch } from 'vue'
+watch([satiety, health], () => {
+    statCss.value = satiety.value + '%'
+    healthCss.value = health.value + '%'
+})
 </script>
 
 <template>
@@ -121,8 +173,8 @@ function goToStart() {
                 </div>
             </div>
             <div class="stat-card level-badge-mini">
-                <img src="../assets/kubok.png" alt="" /> {{ penguinLevel }} | <img src="../assets/star.png" alt="" /> {{
-                    roundedXp }}/{{ xpToNext }}
+                <img src="../assets/kubok.png" alt=""> {{ getPenguinLevel()}} | <img src="../assets/star.png" alt=""> {{ penguinXp }}/{{
+                    xpToNext }}
             </div>
             <div v-if="isSick" class="sick-badge">🤒 Болен</div>
             <div class="medicine-count">💊 {{ medicineCount }}</div>
@@ -161,8 +213,10 @@ function goToStart() {
             <router-link to="/collection" class="nav-item">
                 <img src="../assets/staya.png" class="nav-icon" alt="" /><span>Стая</span>
             </router-link>
-        </div>
     </div>
+        
+    <div v-if="message" class="message-toast">{{ message }}</div>
+       </div> 
 </template>
 
 <style scoped>
