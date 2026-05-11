@@ -49,7 +49,7 @@ function goBack() { router.push('/home') }
     <div class="header">
       <button class="back-btn" @click="goBack">←</button>
       <span class="title">Холодильник</span>
-      <div class="fish-total">🐟 {{ fishInventory.length }}</div>
+      <div class="fish-total">🐟 {{ fishInventory.length }} / 100</div>
     </div>
 
     <div class="content">

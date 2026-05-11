@@ -104,7 +104,7 @@ onUnmounted(() => {
       <button class="back-btn" @click="goBack">←</button>
       <span class="page-title">Рыбалка</span>
       <div class="header-stats">
-        <div class="fish-counter">🐟 {{ fishCount }}</div>
+        <div class="fish-counter">🐟 {{ fishCount }} / 100</div>
         <div class="ticket-counter">🎟️ {{ tickets }}</div>
       </div>
     </div>
