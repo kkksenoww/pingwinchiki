@@ -6,7 +6,7 @@ import Gacha from './components/Gacha.vue'
 import Fridge from './components/Fridge.vue'
 import Collection from './components/Collection.vue'
 import notFound from './components/notFound.vue'
-import Prologue from './components/Prologue.vue'
+import Prologue from './components/prologue.vue'
 
 const routes = [
   { path: '/', name: 'start', component: StartPage },
