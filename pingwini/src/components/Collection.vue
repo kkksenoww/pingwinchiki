@@ -4,96 +4,34 @@ import { useRouter } from 'vue-router'
 import useGacha from '../composables/useGacha'
 
 const router = useRouter()
-const { inventory, getPenguinById, penguinBase, fragments } = useGacha()
+const {
+  inventory, fragments, penguinBase, upgradePenguin,
+  penguinLevels, convertFragmentsToFish, MAX_PENGUIN_LEVEL,
+  getStasiHelpChances
+} = useGacha()
 
 const selectedId = ref(null)
 
-const ownedPenguins = computed(() => {
-  const result = []
-  for (let i = 0; i < inventory.value.length; i++) {
-    const penguin = getPenguinById(inventory.value[i])
-    if (penguin) {
-      result.push(penguin)
-    }
-  }
-  return result
-})
-
 const allPenguins = computed(() => {
-  const result = []
-  for (let i = 0; i < penguinBase.length; i++) {
-    const penguin = penguinBase[i]
-    let owned = false
-    for (let j = 0; j < inventory.value.length; j++) {
-      if (inventory.value[j] === penguin.id) {
-        owned = true
-        break
-      }
-    }
-    const frags = fragments.value[penguin.id] || 0
-    result.push({
-      id: penguin.id,
-      name: penguin.name,
-      rarity: penguin.rarity,
-      image: penguin.image,
-      owned: owned,
-      fragments: frags
-    })
-  }
-  
-  const sorted = []
+  const all = penguinBase.map(p => ({
+    ...p,
+    owned: inventory.value.includes(p.id),
+    frags: fragments.value[p.id] || 0,
+    level: penguinLevels.value[p.id] || 1
+  }))
   const order = ['legendary', 'epic', 'rare', 'common']
-
-  for (let r = 0; r < order.length; r++) {
-    for (let i = 0; i < result.length; i++) {
-      if (result[i].rarity === order[r] && result[i].owned) {
-        sorted.push(result[i])
-      }
-    }
-  }
-  
-  for (let r = 0; r < order.length; r++) {
-    for (let i = 0; i < result.length; i++) {
-      if (result[i].rarity === order[r] && !result[i].owned) {
-        sorted.push(result[i])
-      }
-    }
-  }
-  
-  return sorted
+  return all.sort((a,b) => {
+    if (a.owned !== b.owned) return a.owned ? -1 : 1
+    return order.indexOf(a.rarity) - order.indexOf(b.rarity)
+  })
 })
 
-const ownedCount = computed(() => {
-  const unique = []
-  for (let i = 0; i < inventory.value.length; i++) {
-    let found = false
-    for (let j = 0; j < unique.length; j++) {
-      if (unique[j] === inventory.value[i]) {
-        found = true
-        break
-      }
-    }
-    if (!found) {
-      unique.push(inventory.value[i])
-    }
-  }
-  return unique.length
-})
-
-const totalCount = computed(() => {
-  return penguinBase.length
-})
-
-function selectPenguin(id) {
-  if (selectedId.value === id) {
-    selectedId.value = null
-  } else {
-    selectedId.value = id
-  }
+function toggleSelect(id) {
+  selectedId.value = selectedId.value === id ? null : id
 }
 
-function goBack() {
-  router.push({ name: 'home' })
+function upgrade(id) {
+  upgradePenguin(id)
 }
 
 function convert(id) {
@@ -108,22 +46,13 @@ function goBack() { router.push('/home') }
     <div class="header">
       <button class="back-btn" @click="goBack">←</button>
       <span class="title">Стая</span>
-      <div class="count">{{ ownedCount }} / {{ totalCount }}</div>
+      <span class="count">{{ inventory.length }} / {{ penguinBase.length }}</span>
     </div>
 
-    <div v-if="ownedCount === 0" class="empty">
-      <p>У вас пока нет пингвинов.</p>
-      <p>Ловите рыбу и получайте карточки для Гачи!</p>
-    </div>
-
-    <div class="grid" v-else>
-      <div
-        v-for="penguin in allPenguins"
-        :key="penguin.id"
-        class="penguin-card"
-        :class="{ locked: !penguin.owned, expanded: selectedId === penguin.id }"
-        @click="selectPenguin(penguin.id)"
-      >
+    <div class="grid">
+      <div v-for="penguin in allPenguins" class="penguin-card"
+           :class="{ locked: !penguin.owned, expanded: selectedId === penguin.id }"
+           @click="toggleSelect(penguin.id)">
         <img :src="penguin.image" :alt="penguin.name" />
         <div class="name">{{ penguin.name }}</div>
         <div class="rarity" :class="penguin.rarity">{{ penguin.rarity }}</div>
@@ -133,6 +62,7 @@ function goBack() { router.push('/home') }
           <div v-if="penguin.owned">
             <p>Фрагменты: {{ penguin.frags }}</p>
 
+            <!-- Шансы помощи -->
             <div class="help-chances" v-if="penguin.owned">
               <p><strong>Помощь каждые 20 мин:</strong></p>
               <p>💊 Шанс: {{ (getStasiHelpChances(penguin.id).medChance * 100).toFixed(1) }}%</p>
@@ -156,46 +86,10 @@ function goBack() { router.push('/home') }
             <p>Фрагменты: {{ penguin.frags }} / 10</p>
           </div>
         </div>
-        
-        <div v-if="selectedId === penguin.id" class="card-details">
-          <div v-if="penguin.owned" class="owned-badge">✅ Получен</div>
-          <div v-else class="fragment-details">
-            <p>Фрагменты: {{ penguin.fragments }} / 10</p>
-            <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: (penguin.fragments * 10) + '%' }"></div>
-            </div>
-          </div>
-        </div>
-        
-        <div v-if="!penguin.owned" class="locked-overlay">🔒</div>
-        <div v-if="!penguin.owned && penguin.fragments > 0 && selectedId !== penguin.id" class="fragments-badge">
-          {{ penguin.fragments }}/10
-        </div>
-      </div>
-    </div>
 
-    <!-- Навигация -->
-    <div class="bottom-nav-mini">
-      <router-link to="/ribalka" class="nav-item">
-        <img src="../assets/fishingg.png" class="nav-icon" alt="" />
-        <span>Рыбалка</span>
-      </router-link>
-      <router-link to="/fridge" class="nav-item">
-        <img src="../assets/holodil.png" class="nav-icon" alt="" />
-        <span>Холодильник</span>
-      </router-link>
-      <router-link to="/home" class="nav-item">
-        <img src="../assets/p_home.png" class="nav-icon" alt="" />
-        <span>Дом</span>
-      </router-link>
-      <router-link to="/gacha" class="nav-item">
-        <img src="../assets/gacha.png" class="nav-icon" alt="" />
-        <span>Гача</span>
-      </router-link>
-      <router-link to="/collection" class="nav-item">
-        <img src="../assets/staya.png" class="nav-icon" alt="" />
-        <span>Стая</span>
-      </router-link>
+        <div v-if="!penguin.owned" class="locked-overlay">🔒</div>
+        <div v-if="!penguin.owned && penguin.frags > 0" class="fragments-badge">{{ penguin.frags }}/10</div>
+      </div>
     </div>
   </div>
 </template>
@@ -206,9 +100,6 @@ function goBack() { router.push('/home') }
   background: linear-gradient(135deg, #00416a, #0f2027);
   color: white;
   font-family: system-ui, sans-serif;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
 }
 
 .convert-btn {
@@ -347,16 +238,16 @@ function goBack() { router.push('/home') }
   font-size: 13px;
 }
 
-.progress-bar {
-  height: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
 .progress-fill {
   height: 100%;
   background: #f39c12;
+  border-radius: 10px;
+}
+
+.upgrade-btn {
+  background: #f39c12;
+  border: none;
+  padding: 6px 12px;
   border-radius: 10px;
   color: white;
   font-weight: bold;
@@ -370,6 +261,7 @@ function goBack() { router.push('/home') }
   margin-top: 5px;
 }
 
+/* Новый блок для отображения шансов */
 .help-chances {
   background: rgba(255,255,255,0.1);
   border-radius: 8px;
@@ -380,40 +272,5 @@ function goBack() { router.push('/home') }
 
 .help-chances p {
   margin: 4px 0;
-}
-
-.bottom-nav-mini {
-  display: flex;
-  justify-content: space-evenly;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  padding: 10px 8px;
-  width: 100%;
-  z-index: 10;
-  margin-top: auto;
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-decoration: none;
-  color: white;
-  font-size: 0.7rem;
-  font-weight: 600;
-  gap: 4px;
-  min-width: 56px;
-}
-
-.nav-icon {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-}
-
-.nav-item.router-link-active {
-  color: #f39c12;
 }
 </style>

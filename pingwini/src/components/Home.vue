@@ -1,85 +1,28 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import useGacha from '../composables/useGacha'
 
-const { 
-  addXp, 
-  getPenguinLevel, 
-  penguinXp, 
-  penguinLevel,
-  removeFishByType,
-  getTotalFish,
-  getFishByType
+const router = useRouter()
+const {
+    health, satiety, isSick, isDead, medicineCount,
+    penguinLevel, penguinXp, penguinStage, penguinStageImage,
+    feedPenguin, healPenguin, getFishByType, resetGame, processPassiveProgress,
+    isGoodEnding          
 } = useGacha()
 
-const satiety = ref(70)
-const health = ref(100)
+const roundedSatiety = computed(() => Math.round(satiety.value))
+const roundedHealth = computed(() => Math.round(health.value))
+const roundedXp = computed(() => Math.round(penguinXp.value))
 
-const message = ref('')
-let msgTimeout = null
-const showBubble = ref(false)
-const bubbleText = ref('')
+const statCss = computed(() => Math.round(satiety.value) + '%')
+const healthCss = computed(() => Math.round(health.value) + '%')
+const xpToNext = computed(() => penguinLevel.value * 100)
 
-const statCss = ref(satiety.value + '%')
-const healthCss = ref(health.value + '%')
-
-const xpToNext = computed(() => getPenguinLevel() * 100)
-
-const hasFish = computed(() => getTotalFish() > 0)
-
-const fishStats = {
-  small: { xp: 5, satiety: 25, name: 'Мелкая рыба' },
-  river: { xp: 12, satiety: 35, name: 'Речная рыба' },
-  sea: { xp: 20, satiety: 45, name: 'Морская рыба' },
-  squid: { xp: 30, satiety: 55, name: 'Кальмар' },
-  royal: { xp: 50, satiety: 75, name: 'Королевская рыба' }
-}
-
-const getBestAvailableFish = () => {
-  const types = ['royal', 'squid', 'sea', 'river', 'small']
-  for (const type of types) {
-    const amount = getFishByType(type)
-    if (amount > 0) {
-      return { type, ...fishStats[type] }
-    }
-  }
-  return null
-}
-
-const showText = (text, duration = 2000) => {
-    if (msgTimeout) clearTimeout(msgTimeout)
-    message.value = text
-    msgTimeout = setTimeout(() => {
-        message.value = ''
-    }, duration)
-}
-
-const tapPico = () => {
-    bubbleText.value = 'Пиу!'
-    showBubble.value = true
-    setTimeout(() => {
-        showBubble.value = false
-    }, 1200)
-}
-
-const feed = () => {
-    if (!hasFish.value) {
-        showText('Нет рыбы в холодильнике! Сходи на рыбалку', 2000)
-        return
-    }
-    
-    const fish = getBestAvailableFish()
-    if (!fish) return
-    
-    removeFishByType(fish.type, 1)
-    
-    satiety.value = Math.min(100, satiety.value + fish.satiety)
-    const leveled = addXp(fish.xp)
-    
-    showText(`+${fish.satiety} сытости, +${fish.xp} XP (${fish.name})`, 2000)
-    
-    if (leveled) {
-        showText(`УРОВЕНЬ ${getPenguinLevel()}!`, 3000)
+const bestAvailableFish = computed(() => {
+    const types = ['royal', 'squid', 'sea', 'river', 'small']
+    for (const t of types) {
+        if (getFishByType(t) > 0) return t
     }
     return null
 })
@@ -116,16 +59,21 @@ function feed() {
     feedMsgTimeout = setTimeout(() => feedMessage.value = '', 2500)
 }
 
-const heal = () => {
-    health.value = Math.min(100, health.value + 5)
-    showText('+5 здоровья', 1000)
+function heal() {
+    if (!healPenguin()) {
+        feedMessage.value = 'Нет лекарств!'
+        clearTimeout(feedMsgTimeout)
+        feedMsgTimeout = setTimeout(() => feedMessage.value = '', 2000)
+    } else {
+        feedMessage.value = '+30 здоровья'
+        clearTimeout(feedMsgTimeout)
+        feedMsgTimeout = setTimeout(() => feedMessage.value = '', 2000)
+    }
 }
 
-import { watch } from 'vue'
-watch([satiety, health], () => {
-    statCss.value = satiety.value + '%'
-    healthCss.value = health.value + '%'
-})
+function goToStart() {
+    router.push('/')
+}
 </script>
 
 <template>
@@ -158,6 +106,7 @@ watch([satiety, health], () => {
     <div v-else class="home-container">
         <img src="../assets/snejinki.png" class="fon" alt="" />
 
+        <!-- Верхняя панель -->
         <div class="stats-panel-mini">
             <div class="stat-card">
                 <img src="../assets/fish.png" alt="" /> {{ roundedSatiety }}%
@@ -172,23 +121,27 @@ watch([satiety, health], () => {
                 </div>
             </div>
             <div class="stat-card level-badge-mini">
-                <img src="../assets/kubok.png" alt=""> {{ getPenguinLevel()}} | <img src="../assets/star.png" alt=""> {{ penguinXp }}/{{
-                    xpToNext }}
+                <img src="../assets/kubok.png" alt="" /> {{ penguinLevel }} | <img src="../assets/star.png" alt="" /> {{
+                    roundedXp }}/{{ xpToNext }}
             </div>
             <div v-if="isSick" class="sick-badge">🤒 Болен</div>
             <div class="medicine-count">💊 {{ medicineCount }}</div>
         </div>
 
+        <!-- Пингвин -->
         <div class="penguin-wrapper">
             <img :src="penguinStageImage" alt="Пико" class="penguin-img" />
             <div class="stage-label">{{ penguinStage === 'baby' ? 'Малыш' : penguinStage === 'young' ? 'Юный' :
                 penguinStage === 'adult' ? 'Взрослый' : 'Мудрец' }}</div>
         </div>
 
+        <!-- Сообщение о кормлении/лечении -->
         <div v-if="feedMessage" class="feed-msg">{{ feedMessage }}</div>
 
+        <!-- Подсказка при болезни -->
         <p v-if="isSick" class="sick-hint">🤒 Пико болен! Покормите его или используйте лекарство.</p>
 
+        <!-- Кнопки -->
         <div class="action-buttons-mini">
             <button @click="feed">🐟 Кормить</button>
             <button v-if="medicineCount > 0 && health < 100" @click="heal" class="heal-btn">💊 Лечить</button>
@@ -197,29 +150,19 @@ watch([satiety, health], () => {
         <!-- Нижняя навигация -->
         <div class="bottom-nav-mini">
             <router-link to="/ribalka" class="nav-item">
-                <img src="../assets/fishingg.png" class="nav-icon" alt="" />
-                <span>Рыбалка</span>
+                <img src="../assets/fishing.png" class="nav-icon" alt="" /><span>Рыбалка</span>
             </router-link>
             <router-link to="/fridge" class="nav-item">
-                <img src="../assets/holodil.png" class="nav-icon" alt="" />
-                <span>Холодильник</span>
-            </router-link>
-            <router-link to="/home" class="nav-item">
-                <img src="../assets/p_home.png" class="nav-icon" alt="" />
-                <span>Дом</span>
+                <img src="../assets/holodil.png" class="nav-icon" alt="" /><span>Холодильник</span>
             </router-link>
             <router-link to="/gacha" class="nav-item">
-                <img src="../assets/gacha.png" class="nav-icon" alt="" />
-                <span>Гача</span>
+                <img src="../assets/gacha.png" class="nav-icon" alt="" /><span>Гача</span>
             </router-link>
             <router-link to="/collection" class="nav-item">
-                <img src="../assets/staya.png" class="nav-icon" alt="" />
-                <span>Стая</span>
+                <img src="../assets/staya.png" class="nav-icon" alt="" /><span>Стая</span>
             </router-link>
+        </div>
     </div>
-        
-    <div v-if="message" class="message-toast">{{ message }}</div>
-       </div> 
 </template>
 
 <style scoped>
@@ -231,7 +174,7 @@ watch([satiety, health], () => {
     justify-content: space-between;
     min-height: 93vh;
     background: radial-gradient(circle at 70% 20%, #3bc1ff, #004f72);
-    padding: 20px;
+    padding: 20px 20px 10px;
     overflow: hidden;
     font-family: system-ui, sans-serif;
 }
@@ -247,6 +190,7 @@ watch([satiety, health], () => {
     pointer-events: none;
 }
 
+/* Верхняя панель статистики */
 .stats-panel-mini {
     display: flex;
     flex-wrap: wrap;
@@ -293,6 +237,20 @@ watch([satiety, health], () => {
     width: v-bind(statCss);
 }
 
+.speech-bubble {
+    position: absolute;
+    background: white;
+    border-radius: 30px;
+    padding: 6px 14px;
+    top: 60px;
+    left: 80%;
+    white-space: nowrap;
+    font-weight: bold;
+    color: #2c3e66;
+    box-shadow: 0 2px 8px black;
+    z-index: 3;
+}
+
 .health-fill {
     background: #e74c3c;
     width: v-bind(healthCss);
@@ -324,6 +282,7 @@ watch([satiety, health], () => {
     font-weight: 600;
 }
 
+/* Пингвин */
 .penguin-wrapper {
     margin: 20px 0 10px;
     text-align: center;
@@ -356,6 +315,7 @@ watch([satiety, health], () => {
     border-radius: 20px;
 }
 
+/* Сообщение */
 .feed-msg {
     background: rgba(0, 0, 0, 0.75);
     color: #ffd966;
@@ -377,6 +337,7 @@ watch([satiety, health], () => {
     z-index: 2;
 }
 
+/* Кнопки действий */
 .action-buttons-mini {
     display: flex;
     gap: 20px;
@@ -411,14 +372,16 @@ watch([satiety, health], () => {
     color: #1e3b4f;
 }
 
+/* Нижняя навигация */
 .bottom-nav-mini {
     display: flex;
     justify-content: space-evenly;
-    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(10px);
-    padding: 10px 8px;
+    padding: 12px 16px;
     width: 100%;
-    z-index: 10;
+    z-index: 2;
 }
 
 .nav-item {
@@ -427,24 +390,32 @@ watch([satiety, health], () => {
     align-items: center;
     text-decoration: none;
     color: white;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    gap: 4px;
-    min-width: 56px;
+    gap: 6px;
+    transition: transform 0.1s;
+    min-width: 64px;
+}
+
+.nav-item:active {
+    transform: scale(0.94);
 }
 
 .nav-icon {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-.nav-item.router-link-active {
-    color: #f39c12;
+.router-link-active .nav-icon {
+    background: rgba(255, 255, 255, 0.35);
 }
 
+/* Оверлей смерти */
 .dead-overlay {
     position: fixed;
     top: 0;
